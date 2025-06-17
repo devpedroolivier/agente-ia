@@ -20,7 +20,13 @@ async def verificar_webhook(request: Request):
 async def receber_webhook(request: Request):
     dados = await request.json()
     try:
-        mensagens = dados.get("entry", [])[0].get("changes", [])[0]["value"]["messages"]
+        value = dados.get("entry", [])[0].get("changes", [])[0].get("value", {})
+        mensagens = value.get("messages", [])
+
+        if not mensagens:
+            print("🔴 Erro ao processar mensagem: 'messages'")
+            return {"status": "no message"}, 200
+
         for mensagem in mensagens:
             numero = mensagem["from"]
             texto = mensagem.get("text", {}).get("body", "").lower()
