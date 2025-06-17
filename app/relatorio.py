@@ -12,13 +12,20 @@ def gerar_grafico_por_polo(df, dias=1):
         'CEO Pimentas': 'CEO Guarulhos'
     })
 
-    df['DH_ACATAMENTO'] = pd.to_datetime(df['DH_ACATAMENTO'])
+    df['DH_ACATAMENTO'] = pd.to_datetime(df['DH_ACATAMENTO'], errors='coerce')
     df['DATA'] = df['DH_ACATAMENTO'].dt.date
+
+    df = df.dropna(subset=['DATA', 'POLO_NOME'])
+
     data_limite = datetime.now().date() - timedelta(days=dias - 1)
     df = df[df['DATA'] >= data_limite]
     agrupado = df.groupby(['DATA', 'POLO_NOME']).size().unstack(fill_value=0)
 
+    if agrupado.empty:
+        raise ValueError("❌ Nenhum dado disponível para gerar o gráfico.")
+
     fig, ax = plt.subplots(figsize=(12, 6))
+
     if dias == 1:
         valores = agrupado.iloc[-1]
         barras = ax.bar(valores.index, valores.values, color=plt.cm.tab10.colors)
@@ -33,7 +40,6 @@ def gerar_grafico_por_polo(df, dias=1):
             y = agrupado.loc[dia]
             pos = x + (i - (dias - 1) / 2) * largura_barra
             ax.bar(pos, y.values, width=largura_barra, label=dia.strftime('%d/%b'))
-
         ax.legend()
 
     ax.set_title(f"Reclamações por Polo - Últimos {dias} dia(s)")

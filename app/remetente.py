@@ -1,6 +1,7 @@
 import os
 import requests
-from app.relatorio import gerar_relatorio  # Importa a função de geração do gráfico
+from app.relatorio import gerar_grafico_por_polo
+from app.processamento import carregar_dados_mais_recentes, transformar_dados_para_intervalo
 
 # Variáveis de ambiente
 TOKEN = os.getenv("META_TOKEN")
@@ -43,17 +44,17 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
     except:
         dias = 1
 
-    # 🟡 Geração e envio do gráfico
+    # 🔄 Geração do gráfico com base nos dados
     try:
-        caminho_imagem = gerar_relatorio(qtd_dias=dias)
-        enviar_imagem(numero, caminho_imagem)
+        df = carregar_dados_mais_recentes()
+        df_transformado = transformar_dados_para_intervalo(df, dias=dias)
+        imagem_buffer = gerar_grafico_por_polo(df_transformado, dias=dias)
+        enviar_imagem(numero, imagem_buffer)
     except Exception as e:
         print("🔴 Erro ao gerar ou enviar o gráfico:", e)
 
-
 # ✅ Envia imagem usando API oficial do WhatsApp
 def enviar_imagem(numero, imagem_buffer):
-    # 1. Upload da imagem (usando buffer em memória)
     url_upload = f"https://graph.facebook.com/v18.0/{ID_TELEFONE}/media"
     headers_upload = {
         "Authorization": f"Bearer {TOKEN}"
@@ -73,7 +74,7 @@ def enviar_imagem(numero, imagem_buffer):
 
     media_id = response_upload.json().get("id")
 
-    # 2. Envio da imagem com legenda
+    # Enviar a imagem com legenda
     url_mensagem = f"https://graph.facebook.com/v18.0/{ID_TELEFONE}/messages"
     headers_msg = {
         "Authorization": f"Bearer {TOKEN}",
@@ -85,11 +86,10 @@ def enviar_imagem(numero, imagem_buffer):
         "type": "image",
         "image": {
             "id": media_id,
-            "caption": "📊 Relatório de reclamações de falta d'água (último dia)"
+            "caption": "📊 Relatório de reclamações de falta d'água"
         }
     }
 
     response_send = requests.post(url_mensagem, headers=headers_msg, json=payload)
     print(f"🟢 Imagem enviada para {numero}: {response_send.status_code}")
     print("📦 Conteúdo:", response_send.text)
-
