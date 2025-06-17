@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from app.mapeamento import SETOR_PARA_POLO, POLO_PARA_NOME
 
 def carregar_dados_mais_recentes():
-    pasta_dados = os.path.join(os.path.dirname(__file__), "data")
+    pasta_dados = os.path.join(os.path.dirname(__file__), "../data")
     
     if not os.path.exists(pasta_dados):
         raise FileNotFoundError(f"Pasta de dados não encontrada: {pasta_dados}")
