@@ -31,7 +31,7 @@ async def receber_webhook(request: Request):
             numero = mensagem["from"]
             texto = mensagem.get("text", {}).get("body", "").lower()
             print(f"📥 Mensagem recebida: {texto} de {numero}")
-            enviar_resposta_padrao(numero)
+            enviar_resposta_padrao(numero, texto)
     except Exception as e:
         print("🔴 Erro ao processar mensagem:", e)
     return {"status": "received"}
