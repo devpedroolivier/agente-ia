@@ -31,7 +31,7 @@ POLO_PARA_NOME = {
 
 # ===== FUNÇÃO PRINCIPAL PARA USO NA API =====
 def gerar_relatorio(qtd_dias: int = 1) -> BytesIO:
-    pasta_dados = r"C:\Users\poliveira.eficien.SBSP\Desktop\automação\reclamacoes_sabesp\data"
+    pasta_dados = os.path.join(os.path.dirname(__file__), "data")
     arquivos = sorted(
         [os.path.join(pasta_dados, f) for f in os.listdir(pasta_dados) if f.endswith(".xlsx")],
         key=os.path.getmtime,
