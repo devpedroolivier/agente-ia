@@ -1,0 +1,33 @@
+name: Deploy automático Railway
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clonar repositório
+      uses: actions/checkout@v3
+
+    - name: Instalar Python e dependências
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Instalar dependências
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Testar compilação
+      run: python -m py_compile app/*.py
+
+    - name: Instalar Railway CLI e realizar deploy
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      run: |
+        npm install -g railway
+        railway up --service agente-ia
