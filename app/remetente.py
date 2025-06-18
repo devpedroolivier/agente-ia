@@ -10,7 +10,10 @@ from app.processamento import (
 )
 from app.comandos import COMANDOS
 from app.respostas import fallback, erro_geral
+from app.respostas import mensagem_boas_vindas
 
+# Cache simples de números atendidos (pode ser substituído por arquivo/json futuramente)
+NUMEROS_ATENDIDOS = set()
 
 # Configuração de logging
 os.makedirs("logs", exist_ok=True)

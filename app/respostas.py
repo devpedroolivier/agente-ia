@@ -1,4 +1,3 @@
-# app/respostas.py
 from datetime import datetime
 
 def saudacao(nome=None):
@@ -7,10 +6,22 @@ def saudacao(nome=None):
 def ajuda():
     return (
         "📌 *Comandos disponíveis:*\n"
+        "- guarulhos 5 dias\n"
+        "- setor 451 hoje\n"
+        "- pimentas último dia\n"
         "- relatório de hoje\n"
         "- relatório de 5 dias\n"
-        "- setor 003\n"
         "- ajuda"
+    )
+
+def mensagem_boas_vindas():
+    return (
+        "👋 Olá! Bem-vindo ao assistente automático de monitoramento da Sabesp.\n\n"
+        "Você pode solicitar relatórios com comandos como:\n"
+        "🔹 *guarulhos 5 dias*\n"
+        "🔹 *setor 451 hoje*\n"
+        "🔹 *pimentas último dia*\n\n"
+        "Digite um comando e eu trarei o resumo e o gráfico atualizado! 📈"
     )
 
 def erro_geral():

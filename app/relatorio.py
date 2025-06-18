@@ -1,56 +1,41 @@
+import os
 import matplotlib.pyplot as plt
-from io import BytesIO
-import numpy as np
-from datetime import datetime, timedelta
-import matplotlib
-import pandas as pd
-matplotlib.use("Agg")
 
-def gerar_grafico_por_polo(df, dias=1):
-    df['POLO_NOME'] = df['POLO_NOME'].replace({
-        'CEO Gopouva': 'CEO Guarulhos',
-        'CEO Pimentas': 'CEO Guarulhos'
-    })
+def gerar_grafico_por_polo(dados, titulo, caminho_saida):
+    if dados.empty:
+        return None
 
-    df['DH_ACATAMENTO'] = pd.to_datetime(df['DH_ACATAMENTO'], errors='coerce')
-    df['DATA'] = df['DH_ACATAMENTO'].dt.date
+    # Ordena os dados por data
+    dados = dados.sort_values(by="Data")
+    dias = dados["Data"].dt.strftime("%d/%m")
+    valores = dados["Reclamacoes"]
 
-    df = df.dropna(subset=['DATA', 'POLO_NOME'])
+    # Criação do gráfico
+    plt.figure(figsize=(10, 5), dpi=150)
+    bars = plt.bar(dias, valores, width=0.4, color="#2D7DD2")
 
-    data_limite = datetime.now().date() - timedelta(days=dias - 1)
-    df = df[df['DATA'] >= data_limite]
-    agrupado = df.groupby(['DATA', 'POLO_NOME']).size().unstack(fill_value=0)
+    # Adiciona números em cima de cada barra
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(
+            bar.get_x() + bar.get_width() / 2,
+            yval + 0.5,
+            int(yval),
+            ha='center',
+            va='bottom',
+            fontsize=9
+        )
 
-    if agrupado.empty:
-        raise ValueError("❌ Nenhum dado disponível para gerar o gráfico.")
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    if dias == 1:
-        valores = agrupado.iloc[-1]
-        barras = ax.bar(valores.index, valores.values, color=plt.cm.tab10.colors)
-        for barra in barras:
-            y = barra.get_height()
-            if y > 0:
-                ax.text(barra.get_x() + barra.get_width() / 2, y + 1, int(y), ha='center', color='black')
-    else:
-        largura_barra = 0.15
-        x = np.arange(len(agrupado.columns))
-        for i, dia in enumerate(agrupado.index[-dias:]):
-            y = agrupado.loc[dia]
-            pos = x + (i - (dias - 1) / 2) * largura_barra
-            ax.bar(pos, y.values, width=largura_barra, label=dia.strftime('%d/%b'))
-        ax.legend()
-
-    ax.set_title(f"Reclamações por Polo - Últimos {dias} dia(s)")
-    ax.set_xlabel("Polos")
-    ax.set_ylabel("Quantidade")
-    ax.set_xticks(np.arange(len(agrupado.columns)))
-    ax.set_xticklabels(agrupado.columns, rotation=20)
+    # Título e eixos
+    plt.title(titulo, fontsize=14, fontweight='bold')
+    plt.xlabel("Dia", fontsize=12)
+    plt.ylabel("Nº de Reclamações", fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
 
-    buffer = BytesIO()
-    plt.savefig(buffer, format="png")
+    # Salvar gráfico
+    os.makedirs(os.path.dirname(caminho_saida), exist_ok=True)
+    plt.savefig(caminho_saida, facecolor='white')
     plt.close()
-    buffer.seek(0)
-    return buffer
+
+    return caminho_saida
