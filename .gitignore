@@ -9,3 +9,4 @@ graficos/
 .idea/
 .vscode/
 .venv/
+app/sincronizar_dados.py
