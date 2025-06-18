@@ -1,14 +1,66 @@
 import os
 import requests
+import logging
 from app.relatorio import gerar_grafico_por_polo
-from app.processamento import carregar_dados_mais_recentes, transformar_dados_para_intervalo
+from app.processamento import (
+    carregar_dados_mais_recentes,
+    transformar_dados_para_intervalo,
+    filtrar_por_setor_ou_polo
+)
+from app.comandos import COMANDOS
+from app.respostas import fallback, erro_geral
 
-# Variáveis de ambiente
+# Configuração de logging
+os.makedirs("logs", exist_ok=True)
+logging.basicConfig(
+    filename="logs/agente.log",
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    encoding="utf-8"
+)
+
 TOKEN = os.getenv("META_TOKEN")
 ID_TELEFONE = os.getenv("PHONE_NUMBER_ID")
 
-# ✅ Enviar mensagem de texto padrão
 def enviar_resposta_padrao(numero, mensagem_usuario):
+    mensagem_usuario = mensagem_usuario.lower()
+    logging.info(f"📩 Mensagem recebida de {numero}: {mensagem_usuario}")
+
+    for chave, acao in COMANDOS.items():
+        if chave in mensagem_usuario:
+            if acao["tipo"] == "texto":
+                logging.info(f"📤 Enviando resposta de texto para comando: {chave}")
+                return enviar_texto(numero, acao["mensagem"])
+            elif acao["tipo"] == "gerar":
+                parametros = acao["interpretador"](mensagem_usuario)
+                dias = parametros.get("dias", 1)
+                setor = parametros.get("setor")
+                polo = parametros.get("polo")
+
+                logging.info(f"🔍 Parâmetros interpretados: dias={dias}, setor={setor}, polo={polo}")
+
+                try:
+                    df = carregar_dados_mais_recentes()
+                    df = transformar_dados_para_intervalo(df, dias=dias)
+                    df = filtrar_por_setor_ou_polo(df, setor=setor, polo=polo)
+
+                    if df.empty:
+                        logging.warning("⚠️ Nenhum dado encontrado para o filtro solicitado.")
+                        return enviar_texto(numero, "⚠️ Nenhum dado encontrado para o filtro solicitado.")
+
+                    imagem_buffer = gerar_grafico_por_polo(df, dias=dias)
+                    logging.info(f"📊 Gerando e enviando gráfico de {dias} dia(s)")
+                    enviar_texto(numero, acao["resposta"](dias))
+                    return enviar_imagem(numero, imagem_buffer)
+
+                except Exception as e:
+                    logging.error("❌ Erro ao gerar ou enviar o gráfico", exc_info=True)
+                    return enviar_texto(numero, erro_geral())
+
+    logging.info("🤖 Nenhum comando reconhecido, enviando fallback")
+    return enviar_texto(numero, fallback())
+
+def enviar_texto(numero, texto):
     url = f"https://graph.facebook.com/v18.0/{ID_TELEFONE}/messages"
     headers = {
         "Authorization": f"Bearer {TOKEN}",
@@ -19,41 +71,16 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
         "to": numero,
         "type": "text",
         "text": {
-            "body": "✅ Olá! Recebemos sua mensagem. Em breve enviaremos o relatório de falta d'água."
+            "body": texto
         }
     }
 
     try:
         resposta = requests.post(url, headers=headers, json=payload)
-        print(f"🟢 Resposta enviada para {numero}: {resposta.status_code}")
-        print("📦 Conteúdo:", resposta.text)
+        logging.info(f"📤 Texto enviado para {numero}: {resposta.status_code}")
     except Exception as e:
-        print("🔴 Erro ao enviar resposta:", e)
+        logging.error("❌ Erro ao enviar texto", exc_info=True)
 
-    # 🧠 Extrair quantidade de dias solicitada
-    dias = 1
-    try:
-        if "5" in mensagem_usuario:
-            dias = 5
-        elif "3" in mensagem_usuario:
-            dias = 3
-        elif "7" in mensagem_usuario:
-            dias = 7
-        elif "1" in mensagem_usuario:
-            dias = 1
-    except:
-        dias = 1
-
-    # 🔄 Geração do gráfico com base nos dados
-    try:
-        df = carregar_dados_mais_recentes()
-        df_transformado = transformar_dados_para_intervalo(df, dias=dias)
-        imagem_buffer = gerar_grafico_por_polo(df_transformado, dias=dias)
-        enviar_imagem(numero, imagem_buffer)
-    except Exception as e:
-        print("🔴 Erro ao gerar ou enviar o gráfico:", e)
-
-# ✅ Envia imagem usando API oficial do WhatsApp
 def enviar_imagem(numero, imagem_buffer):
     url_upload = f"https://graph.facebook.com/v18.0/{ID_TELEFONE}/media"
     headers_upload = {
@@ -69,12 +96,11 @@ def enviar_imagem(numero, imagem_buffer):
 
     response_upload = requests.post(url_upload, headers=headers_upload, files=files, data=data)
     if response_upload.status_code != 200:
-        print("🔴 Erro no upload da imagem:", response_upload.text)
+        logging.error(f"❌ Erro no upload da imagem: {response_upload.text}")
         return
 
     media_id = response_upload.json().get("id")
 
-    # Enviar a imagem com legenda
     url_mensagem = f"https://graph.facebook.com/v18.0/{ID_TELEFONE}/messages"
     headers_msg = {
         "Authorization": f"Bearer {TOKEN}",
@@ -91,5 +117,4 @@ def enviar_imagem(numero, imagem_buffer):
     }
 
     response_send = requests.post(url_mensagem, headers=headers_msg, json=payload)
-    print(f"🟢 Imagem enviada para {numero}: {response_send.status_code}")
-    print("📦 Conteúdo:", response_send.text)
+    logging.info(f"📤 Imagem enviada para {numero}: {response_send.status_code}")
