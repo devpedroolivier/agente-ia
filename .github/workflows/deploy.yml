@@ -1,4 +1,4 @@
-name: Deploy automático Railway
+name: Deploy FastAPI App
 
 on:
   push:
@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Clonar repositório
+    - name: Checkout o código
       uses: actions/checkout@v3
 
-    - name: Instalar Python e dependências
+    - name: Configurar Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
@@ -22,13 +22,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Testar compilação
-      run: python -m py_compile app/*.py
-
-    - name: Instalar Railway CLI e realizar deploy
-      env:
-        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    - name: Rodar testes com pytest
       run: |
-        npm install -g @railway/cli
-        railway up --ci --service agente-ia
-
+        pip install pytest
+        pytest tests
+      env:
+        PYTHONPATH: ${{ github.workspace }}
