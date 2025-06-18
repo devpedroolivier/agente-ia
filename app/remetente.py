@@ -5,10 +5,12 @@ from app.relatorio import gerar_grafico_por_polo
 from app.processamento import (
     carregar_dados_mais_recentes,
     transformar_dados_para_intervalo,
-    filtrar_por_setor_ou_polo
+    filtrar_por_setor_ou_polo,
+    gerar_resumo_textual
 )
 from app.comandos import COMANDOS
 from app.respostas import fallback, erro_geral
+
 
 # Configuração de logging
 os.makedirs("logs", exist_ok=True)
@@ -48,6 +50,8 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
                         logging.warning("⚠️ Nenhum dado encontrado para o filtro solicitado.")
                         return enviar_texto(numero, "⚠️ Nenhum dado encontrado para o filtro solicitado.")
 
+                    resumo_texto = gerar_resumo_textual(df, setor=setor, polo=polo)
+                    enviar_texto(numero, resumo_texto)  # Envia o resumo antes do gráfico
                     imagem_buffer = gerar_grafico_por_polo(df, dias=dias)
                     logging.info(f"📊 Gerando e enviando gráfico de {dias} dia(s)")
                     enviar_texto(numero, acao["resposta"](dias))
@@ -59,6 +63,7 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
 
     logging.info("🤖 Nenhum comando reconhecido, enviando fallback")
     return enviar_texto(numero, fallback())
+
 
 def enviar_texto(numero, texto):
     url = f"https://graph.facebook.com/v18.0/{ID_TELEFONE}/messages"

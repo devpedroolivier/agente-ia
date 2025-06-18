@@ -1,6 +1,10 @@
 from app.respostas import ajuda, relatorio_confirmacao
 from app.mapeamento import SETOR_PARA_POLO, POLO_PARA_NOME
+from app.processamento import carregar_setores_completos
 import re
+
+# Carrega os setores completos uma vez só
+SETORES_COMPLETOS = carregar_setores_completos()
 
 def extrair_dias(mensagem):
     for d in ["7", "5", "3", "1"]:
@@ -14,18 +18,26 @@ def interpretar_mensagem(mensagem):
     mensagem = mensagem.lower()
     dias = extrair_dias(mensagem)
 
-    # Extrai setor
-    setor_match = re.search(r"setor\s*(\d{3})", mensagem)
-    setor = setor_match.group(1) if setor_match else None
+    # Tenta extrair código setor (3 dígitos)
+    setor_codigo = None
+    m = re.search(r"setor\s*(\d{3})", mensagem)
+    if m:
+        setor_codigo = m.group(1)
+    else:
+        # Procura nome completo do setor na mensagem
+        for codigo, nome_completo in SETORES_COMPLETOS.items():
+            if nome_completo.lower() in mensagem:
+                setor_codigo = codigo
+                break
 
-    # Identifica polo baseado no nome
+    # Extrai polo
     polo = None
-    for cod, nome_completo in POLO_PARA_NOME.items():
-        if nome_completo.lower().split("ceo")[-1].strip() in mensagem:
+    for cod, nome in POLO_PARA_NOME.items():
+        if nome.lower().split("ceo")[-1].strip() in mensagem:
             polo = cod
             break
 
-    return {"dias": dias, "setor": setor, "polo": polo}
+    return {"dias": dias, "setor": setor_codigo, "polo": polo}
 
 COMANDOS = {
     "relatório": {

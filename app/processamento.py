@@ -40,3 +40,27 @@ def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = N
         return df[df["POLO"] == polo]
     return df
 
+def gerar_resumo_textual(df, setor=None, polo=None):
+    total = len(df)
+    dias = (df['DH_ACATAMENTO'].max().date() - df['DH_ACATAMENTO'].min().date()).days + 1
+    media_diaria = total / dias if dias > 0 else total
+
+    resumo = f"📋 Resumo de reclamações nos últimos {dias} dias:\\n"
+    resumo += f"- Total: {total}\\n"
+    resumo += f"- Média diária: {media_diaria:.2f}\\n"
+    if setor:
+        resumo += f"- Setor: {setor}\\n"
+    if polo:
+        resumo += f"- Polo: {polo}\\n"
+
+    return resumo
+
+def carregar_setores_completos():
+    df = carregar_dados_mais_recentes()
+    setores = df['SETOR ABASTECIMENTO'].dropna().unique()
+    dicionario = {}
+    for s in setores:
+        # Exemplo: '042 - Pirituba'
+        codigo = s.split()[0]
+        dicionario[codigo] = s
+    return dicionario
