@@ -24,6 +24,7 @@ jobs:
 
     - name: Rodar testes com pytest
       run: |
+        python -m pip install pytest
         pytest tests
 
     - name: Instalar Railway CLI e realizar deploy
