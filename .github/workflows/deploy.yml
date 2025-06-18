@@ -29,5 +29,5 @@ jobs:
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       run: |
-        npm install -g @railway/cli
-        railway up --service agente-ia --token $RAILWAY_TOKEN
+        npm install -g railway
+        railway up --service agente-ia
