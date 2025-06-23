@@ -42,24 +42,20 @@ def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = N
         return df[df["POLO"] == polo]
     return df
 
-def gerar_resumo_textual(df, dias=None, polo=None, setor=None):
-    total = len(df)
-    if df.empty:
-        dias = dias or 1
-        media_diaria = 0
-    else:
-        if not dias or not isinstance(dias, int):
-            dias = (df['DH_ACATAMENTO'].max().date() - df['DH_ACATAMENTO'].min().date()).days + 1
-        media_diaria = total / dias if dias > 0 else total
+def gerar_resumo_textual(df_filtrado, polo, dias_total=10):
+    total = len(df_filtrado)
+    media = total / dias_total if dias_total else 0
 
-    resumo = f"📋 Resumo de reclamações nos últimos {dias} dias:\n"
-    resumo += f"- Total: {total}\n"
-    resumo += f"- Média diária: {media_diaria:.2f}\n"
-    if setor:
-        resumo += f"- Setor: {str(setor).strip()}\n"
-    if polo:
-        resumo += f"- Polo: {str(polo).strip()}\n"
+    menor_data = df_filtrado["DH_ACATAMENTO"].min()
+    maior_data = df_filtrado["DH_ACATAMENTO"].max()
+    nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
 
+    resumo = f"""📊 *Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)*
+
+• Total: {total} reclamações
+• Média diária: {media:.1f}
+• Período: {menor_data.strftime('%d/%m')} a {maior_data.strftime('%d/%m')}
+"""
     return resumo
 
 def carregar_setores_completos():
