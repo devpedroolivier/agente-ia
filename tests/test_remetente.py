@@ -4,8 +4,9 @@ def test_enviar_resposta_padrao_ceo():
     resposta = enviar_resposta_padrao("5511999999999", "relatorio 1 dia santana")
     assert isinstance(resposta, dict)
     assert "imagem" in resposta
-    assert "mensagem" in resposta
+    assert resposta["imagem"] is not None
     assert resposta["imagem"].endswith(".png")
+    assert "mensagem" in resposta
 
 def test_enviar_resposta_padrao_setor():
     resposta = enviar_resposta_padrao("5511999999999", "relatorio 3 dias setor 028")
