@@ -1,5 +1,6 @@
 import logging
 import re
+import warnings
 from app.relatorio import gerar_grafico_por_polo
 from app.processamento import (
     carregar_dados_mais_recentes,
@@ -7,6 +8,8 @@ from app.processamento import (
     filtrar_por_setor_ou_polo,
     gerar_resumo_textual
 )
+
+warnings.simplefilter("ignore", UserWarning)  # Ignora warning de estilo do openpyxl
 
 # 🔍 Extração dinâmica de dias via regex
 def extrair_dias(mensagem):
@@ -30,13 +33,32 @@ def extrair_polo(mensagem):
         return "n"
     return None
 
-# ✅ Função principal
+# ✅ Função principal com tratamento de comandos inválidos e ajuda
 def enviar_resposta_padrao(numero, mensagem_usuario):
     try:
         mensagem_usuario = mensagem_usuario.lower()
 
+        # 🧠 Ajuda ou comando inválido
+        if any(p in mensagem_usuario for p in ["ajuda", "comandos", "menu", "opções"]):
+            return {
+                "mensagem": (
+                    "🤖 *Comandos disponíveis:*\n"
+                    "- relatorio 1 dia santana\n"
+                    "- relatorio 5 dias gopouva\n"
+                    "- relatorio 10 dias freguesia\n"
+                    "- relatorio 3 dias extremo norte"
+                ),
+                "numero": numero
+            }
+
         dias = extrair_dias(mensagem_usuario)
         polo = extrair_polo(mensagem_usuario)
+
+        if polo is None:
+            return {
+                "mensagem": "❌ Não entendi o polo informado. Envie algo como: *relatorio 3 dias santana*",
+                "numero": numero
+            }
 
         df = carregar_dados_mais_recentes()
         df_intervalo = transformar_dados_para_intervalo(df, dias)
@@ -53,7 +75,7 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
             }
         else:
             return {
-                "mensagem": "⚠️ Ocorreu um erro ao processar sua solicitação. Tente novamente em instantes.",
+                "mensagem": "⚠️ Nenhuma reclamação encontrada no período solicitado.",
                 "numero": numero
             }
 

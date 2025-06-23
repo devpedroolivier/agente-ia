@@ -19,7 +19,7 @@ def gerar_grafico_por_polo(dados, polo, dias_intervalo, caminho_saida=None):
             return None
 
         dias_ordenados = list(agrupado.index)
-        nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
+        nome_polo = POLO_PARA_NOME.get((polo or "").lower(), (polo or "").upper())
         titulo = f"Reclamações - Polo {nome_polo} ({dias_ordenados[0]} a {dias_ordenados[-1]})"
 
         # 🎨 Configuração do gráfico
