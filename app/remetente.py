@@ -42,7 +42,12 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
             df = carregar_dados_mais_recentes()
             df_intervalo = transformar_dados_para_intervalo(df, dados["dias"])
             df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, dados["polo"], dados["setor"])
-            caminho_imagem = gerar_grafico_por_polo(df_filtrado, dados["dias"], dados["polo"], dados["setor"])
+
+            titulo = f"Relatório de {dados['dias']} dia(s)"
+            nome_saida = f"{numero}_{dados['polo'] or dados['setor']}.png"
+            caminho_saida = os.path.join("graficos", nome_saida)
+
+            caminho_imagem = gerar_grafico_por_polo(df_filtrado, titulo, caminho_saida)
             texto = gerar_resumo_textual(df_filtrado, dados["dias"], dados["polo"], dados["setor"])
 
             return {"imagem": caminho_imagem, "mensagem": texto}
