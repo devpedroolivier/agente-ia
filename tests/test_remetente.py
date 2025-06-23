@@ -20,5 +20,6 @@ def test_enviar_resposta_padrao_setor():
 
 def test_comando_invalido():
     resposta = enviar_resposta_padrao("5511999999999", "gostaria de saber dados")
-    assert isinstance(resposta, str)
-    assert "não entendi" in resposta.lower() or "informe um CEO ou setor" in resposta.lower()
+    assert isinstance(resposta, dict)
+    assert "mensagem" in resposta
+    assert "não entendi" in resposta["mensagem"].lower()
