@@ -1,45 +1,66 @@
 
+import os
+import requests
 from fastapi import FastAPI, Request
 from app.remetente import enviar_resposta_padrao
-import requests
-import os
 
 app = FastAPI()
-
 TOKEN = os.getenv("META_TOKEN")
-PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
-URL_API = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
-HEADERS = {
-    "Authorization": f"Bearer {TOKEN}",
-    "Content-Type": "application/json"
-}
+ID_TELEFONE = os.getenv("PHONE_NUMBER_ID")
 
-def enviar_texto(numero, mensagem):
-    body = {
+def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
+    headers = {
+        "Authorization": f"Bearer {TOKEN}"
+    }
+
+    # Upload da imagem para o servidor da Meta, se existir
+    media_id = None
+    if imagem_bytes:
+        upload_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/media"
+        files = {
+            "file": ("grafico.png", imagem_bytes, "image/png")
+        }
+        data = {
+            "messaging_product": "whatsapp",
+            "type": "image"
+        }
+        response = requests.post(upload_url, headers=headers, data=data, files=files)
+        response_json = response.json()
+        media_id = response_json.get("id")
+
+    # Envio da mensagem
+    mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
+    payload = {
         "messaging_product": "whatsapp",
         "to": numero,
-        "type": "text",
-        "text": {"body": mensagem}
+        "type": "text" if not media_id else "image",
+        "text": {"body": mensagem} if not media_id else None,
+        "image": {"id": media_id, "caption": mensagem} if media_id else None
     }
-    requests.post(URL_API, headers=HEADERS, json=body)
 
-def enviar_imagem(numero, caminho_imagem):
-    with open(caminho_imagem, "rb") as img:
-        upload_resp = requests.post(
-            f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/media",
-            headers={"Authorization": f"Bearer {TOKEN}"},
-            files={"file": img},
-            data={"messaging_product": "whatsapp"}
-        )
-    media_id = upload_resp.json().get("id")
-    if media_id:
-        body = {
-            "messaging_product": "whatsapp",
-            "to": numero,
-            "type": "image",
-            "image": {"id": media_id}
-        }
-        requests.post(URL_API, headers=HEADERS, json=body)
+    return requests.post(mensagem_url, headers=headers, json=payload)
+
+@app.post("/webhook")
+async def receber_webhook(request: Request):
+    dados = await request.json()
+    try:
+        mensagens = dados.get("entry", [])[0].get("changes", [])[0].get("value", {}).get("messages", [])
+        if not mensagens:
+            return {"status": "no message"}
+
+        for msg in mensagens:
+            numero = msg["from"]
+            texto = msg["text"]["body"]
+
+            resposta = enviar_resposta_padrao(numero, texto)
+            enviar_mensagem_whatsapp(
+                numero=resposta["numero"],
+                mensagem=resposta["mensagem"],
+                imagem_bytes=resposta.get("imagem_bytes")
+            )
+        return {"status": "ok"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 @app.get("/webhook")
 async def verificar_webhook(request: Request):
@@ -51,35 +72,3 @@ async def verificar_webhook(request: Request):
     if mode == "subscribe" and token == "sabesp123":
         return int(challenge)
     return {"status": "forbidden"}, 403
-
-@app.post("/webhook")
-async def receber_webhook(request: Request):
-    dados = await request.json()
-    try:
-        value = dados.get("entry", [])[0].get("changes", [])[0].get("value", {})
-        mensagens = value.get("messages", [])
-
-        if not mensagens:
-            print("🔴 Erro ao processar mensagem: 'messages'")
-            return {"status": "no message"}, 200
-
-        for mensagem in mensagens:
-            numero = mensagem["from"]
-            texto = mensagem.get("text", {}).get("body", "").lower()
-            print(f"📥 Mensagem recebida: {texto} de {numero}")
-
-            resposta = enviar_resposta_padrao(numero, texto)
-
-            if isinstance(resposta, dict):
-                numero = resposta.get("numero")
-                if resposta.get("mensagem"):
-                    enviar_texto(numero, resposta["mensagem"])
-                if resposta.get("imagem"):
-                    enviar_imagem(numero, resposta["imagem"])
-            elif isinstance(resposta, str):
-                enviar_texto(numero, resposta)
-
-    except Exception as e:
-        print("🔴 Erro ao processar mensagem:", e)
-
-    return {"status": "received"}

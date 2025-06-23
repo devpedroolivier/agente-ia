@@ -2,14 +2,15 @@
 import os
 import matplotlib.pyplot as plt
 import logging
+from io import BytesIO
 
-def gerar_grafico_por_polo(dados, titulo, caminho_saida):
+def gerar_grafico_por_polo(dados, titulo, caminho_saida=None):
     try:
         if dados.empty:
             logging.warning("⚠️ DataFrame vazio — gráfico não será gerado.")
             return None
 
-        dados = dados.copy()  # Evita SettingWithCopyWarning
+        dados = dados.copy()
         dados["DIA"] = dados["DH_ACATAMENTO"].dt.strftime("%d/%m")
         agrupado = dados.groupby("DIA").size()
 
@@ -37,11 +38,17 @@ def gerar_grafico_por_polo(dados, titulo, caminho_saida):
         plt.grid(True, linestyle='--', alpha=0.5)
         plt.tight_layout()
 
-        os.makedirs(os.path.dirname(caminho_saida), exist_ok=True)
-        plt.savefig(caminho_saida, facecolor='white')
-        plt.close()
-
-        return caminho_saida
+        if caminho_saida:
+            os.makedirs(os.path.dirname(caminho_saida), exist_ok=True)
+            plt.savefig(caminho_saida, facecolor='white')
+            plt.close()
+            return caminho_saida
+        else:
+            buffer = BytesIO()
+            plt.savefig(buffer, format='png', facecolor='white')
+            plt.close()
+            buffer.seek(0)
+            return buffer
 
     except Exception as e:
         logging.exception("Erro ao gerar gráfico:")
