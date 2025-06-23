@@ -51,6 +51,12 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
             caminho_saida = os.path.join("graficos", nome_saida)
 
             caminho_imagem = gerar_grafico_por_polo(df_filtrado, titulo, caminho_saida)
+
+            if caminho_imagem and os.path.exists(caminho_imagem):
+                logging.info(f"📸 Imagem gerada: {caminho_imagem}")
+            else:
+                logging.warning("⚠️ Nenhuma imagem foi gerada.")
+
             texto = gerar_resumo_textual(df_filtrado, dados["dias"], dados.get("polo"), dados.get("setor"))
 
             return {"imagem": caminho_imagem, "mensagem": texto}
