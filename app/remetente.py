@@ -47,6 +47,10 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
             print("🔍 Dados filtrados:")
             print(df_filtrado[["DH_ACATAMENTO", "SETOR", "POLO", "POLO_NOME"]].head(10))
 
+            if df_filtrado.empty:
+                texto = "⚠️ Nenhum dado encontrado para o filtro solicitado."
+                return {"numero": numero, "mensagem": texto, "imagem": None}
+
             titulo = f"Relatório de {dados['dias']} dia(s)"
             nome_saida = f"{numero}_{dados['polo'] or dados['setor']}.png"
             caminho_saida = os.path.join("graficos", nome_saida)
