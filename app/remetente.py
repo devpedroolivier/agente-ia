@@ -1,6 +1,5 @@
-import os
 import logging
-from io import BytesIO
+import re
 from app.relatorio import gerar_grafico_por_polo
 from app.processamento import (
     carregar_dados_mais_recentes,
@@ -8,57 +7,59 @@ from app.processamento import (
     filtrar_por_setor_ou_polo,
     gerar_resumo_textual
 )
-from app.comandos import COMANDOS
-from app.respostas import fallback, erro_geral
 
-# Configuração de logging
-os.makedirs("logs", exist_ok=True)
-logging.basicConfig(
-    filename="logs/agente.log",
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    encoding="utf-8"
-)
+# 🔍 Extração dinâmica de dias via regex
+def extrair_dias(mensagem):
+    match = re.search(r"(\d+)\s*dias?", mensagem)
+    return int(match.group(1)) if match else 1
 
-TOKEN = os.getenv("META_TOKEN")
-ID_TELEFONE = os.getenv("PHONE_NUMBER_ID")
+# 🔍 Extração inteligente do polo com base em palavras-chave
+def extrair_polo(mensagem):
+    mensagem = mensagem.lower()
+    if "freguesia" in mensagem:
+        return "f"
+    elif "santana" in mensagem:
+        return "s"
+    elif "pimentas" in mensagem:
+        return "m"
+    elif "pirituba" in mensagem:
+        return "p"
+    elif "gopouva" in mensagem:
+        return "g"
+    elif "extremo norte" in mensagem or "norte" in mensagem:
+        return "n"
+    return None
 
+# ✅ Função principal
 def enviar_resposta_padrao(numero, mensagem_usuario):
-    mensagem_usuario = mensagem_usuario.lower().strip()
-    logging.info(f"📩 Mensagem recebida de {numero}: {mensagem_usuario}")
-
     try:
-        if "ajuda" in mensagem_usuario:
-            resposta = COMANDOS["ajuda"]["mensagem"]
-            return {"numero": numero, "mensagem": resposta}
+        mensagem_usuario = mensagem_usuario.lower()
 
-        if "relatorio" in mensagem_usuario:
-            comando = COMANDOS["relatorio"]
-            dados = comando["interpretador"](mensagem_usuario)
+        dias = extrair_dias(mensagem_usuario)
+        polo = extrair_polo(mensagem_usuario)
 
-            if not dados.get("polo") and not dados.get("setor"):
-                return {"numero": numero, "mensagem": "❌ Por favor, informe um CEO ou setor válido após o comando."}
+        df = carregar_dados_mais_recentes()
+        df_intervalo = transformar_dados_para_intervalo(df, dias)
+        df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polo=polo)
 
-            df = carregar_dados_mais_recentes()
-            df_intervalo = transformar_dados_para_intervalo(df, dados["dias"])
-            df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, dados["setor"], dados["polo"])
+        imagem_buffer = gerar_grafico_por_polo(df_filtrado, polo=polo, dias_intervalo=dias)
 
-            if df_filtrado.empty:
-                texto = "⚠️ Nenhum dado encontrado para o filtro solicitado."
-                return {"numero": numero, "mensagem": texto, "imagem": None}
-
-            titulo = f"Relatório de {dados['dias']} dia(s)"
-            imagem_buffer = gerar_grafico_por_polo(df_filtrado, titulo)
-
-            texto = gerar_resumo_textual(df_filtrado, dados["dias"], dados.get("polo"), dados.get("setor"))
-
+        if imagem_buffer:
+            resumo = gerar_resumo_textual(df_filtrado, polo=polo, dias_total=dias)
             return {
-                "numero": numero,
-                "mensagem": texto,
-                "imagem_bytes": imagem_buffer.read() if imagem_buffer else None
+                "imagem_bytes": imagem_buffer,
+                "mensagem": resumo,
+                "numero": numero
+            }
+        else:
+            return {
+                "mensagem": "⚠️ Ocorreu um erro ao processar sua solicitação. Tente novamente em instantes.",
+                "numero": numero
             }
 
-        return {"numero": numero, "mensagem": fallback()}
     except Exception as e:
-        logging.exception("Erro ao processar a mensagem.")
-        return {"numero": numero, "mensagem": erro_geral()}
+        logging.exception("❌ Erro ao processar a mensagem.")
+        return {
+            "mensagem": "⚠️ Ocorreu um erro ao processar sua solicitação. Tente novamente em instantes.",
+            "numero": numero
+        }
