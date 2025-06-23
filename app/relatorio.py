@@ -9,7 +9,7 @@ def gerar_grafico_por_polo(dados, titulo, caminho_saida):
             logging.warning("⚠️ DataFrame vazio — gráfico não será gerado.")
             return None
 
-        # Agrupar por data (apenas parte da data)
+        dados = dados.copy()  # Evita SettingWithCopyWarning
         dados["DIA"] = dados["DH_ACATAMENTO"].dt.strftime("%d/%m")
         agrupado = dados.groupby("DIA").size()
 
@@ -17,7 +17,6 @@ def gerar_grafico_por_polo(dados, titulo, caminho_saida):
             logging.warning("⚠️ Nenhum dado após agrupamento por dia.")
             return None
 
-        # Criação do gráfico
         plt.figure(figsize=(10, 5), dpi=150)
         bars = plt.bar(agrupado.index, agrupado.values, width=0.4, color="#2D7DD2")
 
