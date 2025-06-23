@@ -1,4 +1,3 @@
-
 import os
 import logging
 from app.relatorio import gerar_grafico_por_polo
@@ -13,6 +12,8 @@ from app.respostas import fallback, erro_geral
 
 # Configuração de logging
 os.makedirs("logs", exist_ok=True)
+os.makedirs("graficos", exist_ok=True)
+
 logging.basicConfig(
     filename="logs/agente.log",
     level=logging.INFO,
@@ -30,14 +31,14 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
     try:
         if "ajuda" in mensagem_usuario:
             resposta = COMANDOS["ajuda"]["mensagem"]
-            return resposta
+            return {"numero": numero, "mensagem": resposta}
 
         if "relatorio" in mensagem_usuario:
             comando = COMANDOS["relatorio"]
             dados = comando["interpretador"](mensagem_usuario)
 
             if not dados.get("polo") and not dados.get("setor"):
-                return "❌ Por favor, informe um CEO ou setor válido após o comando."
+                return {"numero": numero, "mensagem": "❌ Por favor, informe um CEO ou setor válido após o comando."}
 
             df = carregar_dados_mais_recentes()
             df_intervalo = transformar_dados_para_intervalo(df, dados["dias"])
@@ -59,9 +60,13 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
 
             texto = gerar_resumo_textual(df_filtrado, dados["dias"], dados.get("polo"), dados.get("setor"))
 
-            return {"imagem": caminho_imagem, "mensagem": texto}
+            return {
+                "numero": numero,
+                "mensagem": texto,
+                "imagem": caminho_imagem if os.path.exists(caminho_imagem) else None
+            }
 
-        return fallback()
+        return {"numero": numero, "mensagem": fallback()}
     except Exception as e:
         logging.exception("Erro ao processar a mensagem.")
-        return erro_geral()
+        return {"numero": numero, "mensagem": erro_geral()}

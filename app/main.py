@@ -24,7 +24,6 @@ def enviar_texto(numero, mensagem):
     requests.post(URL_API, headers=HEADERS, json=body)
 
 def enviar_imagem(numero, caminho_imagem):
-    # Passo 1: Upload da mídia
     with open(caminho_imagem, "rb") as img:
         upload_resp = requests.post(
             f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/media",
@@ -33,8 +32,6 @@ def enviar_imagem(numero, caminho_imagem):
             data={"messaging_product": "whatsapp"}
         )
     media_id = upload_resp.json().get("id")
-
-    # Passo 2: Enviar imagem com media_id
     if media_id:
         body = {
             "messaging_product": "whatsapp",
@@ -74,6 +71,7 @@ async def receber_webhook(request: Request):
             resposta = enviar_resposta_padrao(numero, texto)
 
             if isinstance(resposta, dict):
+                numero = resposta.get("numero")
                 if resposta.get("mensagem"):
                     enviar_texto(numero, resposta["mensagem"])
                 if resposta.get("imagem"):
