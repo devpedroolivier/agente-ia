@@ -6,13 +6,13 @@ def test_extrair_dias():
     assert extrair_dias("sem número") == 1
 
 def test_interpretar_mensagem():
-    res = interpretar_mensagem("relatório setor 042 santana 3 dias")
+    res = interpretar_mensagem("relatório setor 042 pirituba 3 dias")
     assert res["dias"] == 3
     assert res["setor"] == "042"
     assert res["polo"] == "s"
-    
+
 def test_interpretar_mensagem_sem_dias():
-    res = interpretar_mensagem("relatório setor 042 santana")
+    res = interpretar_mensagem("relatório setor 042 pirituba")
     assert res["dias"] == 1
     assert res["polo"] == "s"
 
