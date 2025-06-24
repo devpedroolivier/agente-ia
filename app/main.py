@@ -24,18 +24,16 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
                 "messaging_product": "whatsapp",
                 "type": "image"
             }
+            print("[DEBUG] Fazendo upload da imagem para o WhatsApp...")
             response = requests.post(upload_url, headers=headers, data=data, files=files)
-            response.raise_for_status()  # dispara erro se falhar
-            response_json = response.json()
-            media_id = response_json.get("id")
-
-            if not media_id:
-                print("⚠️ Erro: media_id não retornado. Resposta:", response_json)
+            print("[DEBUG] Resposta do upload:", response.status_code, response.text)
+            response.raise_for_status()
+            media_id = response.json().get("id")
 
         except Exception as e:
             print(f"❌ Falha ao fazer upload da imagem: {e}")
+            return None
 
-    mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
     payload = {
         "messaging_product": "whatsapp",
         "to": numero,
@@ -45,7 +43,11 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
     }
 
     try:
+        mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
+        print("[DEBUG] Enviando mensagem para:", numero)
+        print("[DEBUG] Payload:", payload)
         response = requests.post(mensagem_url, headers=headers, json=payload)
+        print("[DEBUG] Resposta do envio:", response.status_code, response.text)
         response.raise_for_status()
         return response
     except Exception as e:
