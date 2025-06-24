@@ -1,4 +1,3 @@
-
 import os
 import logging
 import matplotlib.pyplot as plt
@@ -78,31 +77,6 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
         if polos and len(polos) > 1 and dias_intervalo <= 5:
             agrupado = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
             todos_ceos = sorted(set(POLO_PARA_NOME.values()))
-            agrupado = agrupado.reindex(todos_ceos, fill_value=0)
-
-            if agrupado.empty:
-                return None
-
-            plt.figure(figsize=(12, 6))
-            agrupado.plot(kind="bar", ax=plt.gca())
-
-            plt.title(f"Reclamações por CEO (últimos {dias_intervalo} dias)", fontsize=14, fontweight='bold')
-            plt.xlabel("CEO")
-            plt.ylabel("Qtd de Reclamações")
-            plt.xticks(rotation=30, ha='right')
-            plt.legend(title="Dia", fontsize=9)
-            plt.grid(axis='y', linestyle='--', alpha=0.5)
-            plt.tight_layout()
-
-            buffer = BytesIO()
-            plt.savefig(buffer, format="png", facecolor='white', bbox_inches="tight")
-            plt.close()
-            buffer.seek(0)
-            return buffer.getvalue()
-
-        if polos and len(polos) > 1 and dias_intervalo <= 5:
-            agrupado = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
-            todos_ceos = sorted(set(POLO_PARA_NOME.values()))
             for ceo in todos_ceos:
                 if ceo not in agrupado.index:
                     agrupado.loc[ceo] = 0
@@ -112,10 +86,20 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
                 return None
 
             fig, ax = plt.subplots(figsize=(12, 6))
-            grouped_plot = agrupado.T.plot(kind="bar", ax=ax)
+            bar_plot = agrupado.T.plot(kind="bar", ax=ax)
 
-            for container in grouped_plot.containers:
-                grouped_plot.bar_label(container, label_type='edge', fontsize=8, padding=2)
+            # Adiciona número em cima de cada barra
+            for bars in bar_plot.containers:
+                for bar in bars:
+                    height = bar.get_height()
+                    if height > 0:
+                        bar_plot.text(
+                            bar.get_x() + bar.get_width() / 2,
+                            height + 0.5,
+                            str(int(height)),
+                            ha='center',
+                            fontsize=8
+                        )
 
             plt.title(f"Reclamações por CEO (últimos {dias_intervalo} dias)", fontsize=14, fontweight='bold')
             plt.xlabel("CEO")
