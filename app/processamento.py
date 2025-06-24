@@ -45,7 +45,7 @@ def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = N
     return df
 
 def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
-    from app.mapeamento import SETOR_PARA_POLO, POLO_PARA_NOME
+    from app.mapeamento import POLO_PARA_NOME
 
     if polos and len(polos) > 1:
         df_filtrado = df_filtrado.copy()
@@ -58,12 +58,14 @@ def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
             texto += f"- {nome}: {qtd}\n"
         return texto
 
+    # Caso 1 polo
     polo = polo or (polos[0] if polos else None)
     nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
     total = len(df_filtrado)
     media = total / dias_total if dias_total else 0
-    menor_data = df_filtrado["DH_ACATAMENTO"].min()
-    maior_data = df_filtrado["DH_ACATAMENTO"].max()
+
+    menor_data = pd.to_datetime(df_filtrado["DH_ACATAMENTO"].min())
+    maior_data = pd.to_datetime(df_filtrado["DH_ACATAMENTO"].max())
 
     resumo = f"""Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)
 
@@ -72,6 +74,7 @@ def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
 • Período: {menor_data.strftime('%d/%m')} a {maior_data.strftime('%d/%m')}
 """
     return resumo
+
 
 def carregar_setores_completos():
     df = carregar_dados_mais_recentes()
