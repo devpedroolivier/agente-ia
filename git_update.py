@@ -1,4 +1,3 @@
-
 import subprocess
 
 def executar_comando(comando):
@@ -18,6 +17,9 @@ def main():
 
     print("📝 Realizando commit...")
     executar_comando(f'git commit -m "{mensagem}"')
+
+    print("🔄 Fazendo pull com rebase para sincronizar...")
+    executar_comando("git pull --rebase")
 
     print("☁️ Enviando para o repositório remoto...")
     executar_comando("git push")
