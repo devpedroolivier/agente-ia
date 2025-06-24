@@ -13,22 +13,28 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
         "Authorization": f"Bearer {TOKEN}"
     }
 
-    # Upload da imagem para o servidor da Meta, se existir
     media_id = None
     if imagem_bytes:
-        upload_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/media"
-        files = {
-            "file": ("grafico.png", imagem_bytes, "image/png")
-        }
-        data = {
-            "messaging_product": "whatsapp",
-            "type": "image"
-        }
-        response = requests.post(upload_url, headers=headers, data=data, files=files)
-        response_json = response.json()
-        media_id = response_json.get("id")
+        try:
+            upload_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/media"
+            files = {
+                "file": ("grafico.png", imagem_bytes, "image/png")
+            }
+            data = {
+                "messaging_product": "whatsapp",
+                "type": "image"
+            }
+            response = requests.post(upload_url, headers=headers, data=data, files=files)
+            response.raise_for_status()  # dispara erro se falhar
+            response_json = response.json()
+            media_id = response_json.get("id")
 
-    # Envio da mensagem
+            if not media_id:
+                print("⚠️ Erro: media_id não retornado. Resposta:", response_json)
+
+        except Exception as e:
+            print(f"❌ Falha ao fazer upload da imagem: {e}")
+
     mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
     payload = {
         "messaging_product": "whatsapp",
@@ -38,7 +44,14 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
         "image": {"id": media_id, "caption": mensagem} if media_id else None
     }
 
-    return requests.post(mensagem_url, headers=headers, json=payload)
+    try:
+        response = requests.post(mensagem_url, headers=headers, json=payload)
+        response.raise_for_status()
+        return response
+    except Exception as e:
+        print(f"❌ Falha ao enviar mensagem para {numero}: {e}")
+        return None
+
 
 @app.post("/webhook")
 async def receber_webhook(request: Request):
