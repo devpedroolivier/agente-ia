@@ -1,7 +1,8 @@
-import pytest
+
 import pandas as pd
-from app.processamento import transformar_dados_para_intervalo, filtrar_por_setor_ou_polo
 from datetime import datetime, timedelta
+from app.processamento import transformar_dados_para_intervalo, filtrar_por_setor_ou_polo
+from app.mapeamento import SETOR_PARA_POLO
 
 def criar_df_exemplo():
     data = {
@@ -23,8 +24,8 @@ def test_transformar_dados_para_intervalo():
 def test_filtrar_por_setor_ou_polo():
     df = criar_df_exemplo()
     df["SETOR"] = df["SETOR ABASTECIMENTO"].str[:3]
-    df["POLO"] = df["SETOR"].map({"042": "p", "003": "f", "119": "n"})
-    
+    df["POLO"] = df["SETOR"].map(SETOR_PARA_POLO)
+
     # filtro por setor
     df_setor = filtrar_por_setor_ou_polo(df, setor="042")
     assert all(df_setor["SETOR"] == "042")
@@ -32,3 +33,10 @@ def test_filtrar_por_setor_ou_polo():
     # filtro por polo
     df_polo = filtrar_por_setor_ou_polo(df, polo="n")
     assert all(df_polo["POLO"] == "n")
+
+def test_filtrar_por_multiplos_polos():
+    df = criar_df_exemplo()
+    df["SETOR"] = df["SETOR ABASTECIMENTO"].str[:3]
+    df["POLO"] = df["SETOR"].map({"042": "p", "003": "f", "119": "n"})
+    df_multi = filtrar_por_setor_ou_polo(df, polos=["p", "n"])
+    assert all(df_multi["POLO"].isin(["p", "n"]))

@@ -8,5 +8,5 @@ graficos/
 *.sqlite3
 .idea/
 .vscode/
-.venv/
+venv/
 app/sincronizar_dados.py
