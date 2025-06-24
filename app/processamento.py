@@ -63,9 +63,11 @@ def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
     total = len(df_filtrado)
     media = total / dias_total if dias_total else 0
 
-    df_filtrado["DH_ACATAMENTO"] = pd.to_datetime(df_filtrado["DH_ACATAMENTO"])
-    menor_data = df_filtrado["DH_ACATAMENTO"].min()
-    maior_data = df_filtrado["DH_ACATAMENTO"].max()
+    menor_data = pd.to_datetime(df_filtrado["DH_ACATAMENTO"].min(), errors='coerce')
+    maior_data = pd.to_datetime(df_filtrado["DH_ACATAMENTO"].max(), errors='coerce')
+
+    if pd.isna(menor_data) or pd.isna(maior_data):
+        return f"Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)\n\n• Nenhuma data válida disponível."
 
     resumo = f"""Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)
 
