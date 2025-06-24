@@ -14,7 +14,10 @@ SETOR_PARA_POLO = {
 }
 
 POLO_PARA_NOME = {
-    'f': 'CEO Freguesia', 's': 'CEO Santana',
-    'm': 'CEO Pimentas', 'p': 'CEO Pirituba',
-    'g': 'CEO Gopouva', 'n': 'CEO Extremo Norte'
+    'f': 'CEO Freguesia',
+    's': 'CEO Santana',
+    'm': 'CEO Guarulhos',  # Pimentas
+    'g': 'CEO Guarulhos',  # Gopouva
+    'p': 'CEO Pirituba',
+    'n': 'CEO Extremo Norte'
 }

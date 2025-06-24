@@ -35,28 +35,52 @@ def transformar_dados_para_intervalo(df: pd.DataFrame, dias: int = 1) -> pd.Data
 
     return df[df['DH_ACATAMENTO'].dt.date >= data_limite]
 
-def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = None) -> pd.DataFrame:
+def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = None, polos: list = None) -> pd.DataFrame:
     if setor:
         return df[df["SETOR"] == setor]
+    elif polos:
+        return df[df["POLO"].isin(polos)]
     elif polo:
         return df[df["POLO"] == polo]
     return df
 
-def gerar_resumo_textual(df_filtrado, polo, dias_total=10):
+def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
+    from app.mapeamento import POLO_PARA_NOME
+
+    if polos and len(polos) > 1:
+        df_filtrado = df_filtrado.copy()
+        df_filtrado["CEO"] = df_filtrado["POLO"].map(POLO_PARA_NOME)
+        contagem_por_ceo = df_filtrado["CEO"].value_counts().sort_index()
+        total_geral = len(df_filtrado)
+
+        texto = f"Resumo das Reclamações nos últimos {dias_total} dias:\n"
+        texto += f"Total Geral: {total_geral} reclamações\n"
+        for ceo, qtd in contagem_por_ceo.items():
+            texto += f"- {ceo}: {qtd}\n"
+        return texto
+
+    polo = polo or (polos[0] if polos else None)
+    if not polo:
+        return "⚠️ Nenhuma reclamação encontrada no período solicitado."
+
+    nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
     total = len(df_filtrado)
     media = total / dias_total if dias_total else 0
 
-    menor_data = df_filtrado["DH_ACATAMENTO"].min()
-    maior_data = df_filtrado["DH_ACATAMENTO"].max()
-    nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
+    menor_data = pd.to_datetime(df_filtrado["DH_ACATAMENTO"].min(), errors='coerce')
+    maior_data = pd.to_datetime(df_filtrado["DH_ACATAMENTO"].max(), errors='coerce')
 
-    resumo = f"""📊 *Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)*
+    if pd.isna(menor_data) or pd.isna(maior_data):
+        return f"Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)\n\n• Nenhuma data válida disponível."
 
-• Total: {total} reclamações
-• Média diária: {media:.1f}
-• Período: {menor_data.strftime('%d/%m')} a {maior_data.strftime('%d/%m')}
-"""
+    resumo = (
+        f"Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)\n\n"
+        f"• Total: {total} reclamações\n"
+        f"• Média diária: {media:.1f}\n"
+        f"• Período: {menor_data.strftime('%d/%m')} a {maior_data.strftime('%d/%m')}"
+    )
     return resumo
+
 
 def carregar_setores_completos():
     df = carregar_dados_mais_recentes()
