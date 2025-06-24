@@ -70,15 +70,19 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
 
         respostas = []
 
-        if dias <= 5 and len(polos) > 1:
-            df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polos=polos)
-            imagem_buffer = gerar_grafico_por_polo(df_filtrado, polos=polos, dias_intervalo=dias)
-            resumo = gerar_resumo_textual(df_filtrado, polos=polos, dias_total=dias)
-            return {
-                "imagem_bytes": imagem_buffer,
-                "mensagem": resumo,
-                "numero": numero
-            }
+        if dias > 5 and len(polos) > 1:
+            for polo in polos:
+                df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polo=polo)
+                imagens = gerar_grafico_por_polo(df_filtrado, polos=[polo], dias_intervalo=dias)
+                resumo = gerar_resumo_textual(df_filtrado, polo=polo, dias_total=dias)
+
+                if imagens:
+                    if isinstance(imagens, list):
+                        for imagem in imagens:
+                            respostas.append({"imagem_bytes": imagem, "mensagem": resumo, "numero": numero})
+                    else:
+                        respostas.append({"imagem_bytes": imagens, "mensagem": resumo, "numero": numero})
+
 
         for polo in polos:
             df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polo=polo)
