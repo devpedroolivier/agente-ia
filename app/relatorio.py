@@ -103,63 +103,8 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
             buffer.seek(0)
             return buffer.getvalue()
 
-        if polos and len(polos) > 1 and dias_intervalo <= 5:
-            agrupado = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
-            todos_ceos = sorted(set(POLO_PARA_NOME.values()))
-            agrupado = agrupado.reindex(todos_ceos, fill_value=0)
-
-            if agrupado.empty:
-                return None
-
-            plt.figure(figsize=(12, 6))
-            agrupado.plot(kind="bar", ax=plt.gca())
-
-            plt.title(f"Reclamações por CEO (últimos {dias_intervalo} dias)", fontsize=14, fontweight='bold')
-            plt.xlabel("CEO")
-            plt.ylabel("Qtd de Reclamações")
-            plt.xticks(rotation=30, ha='right')
-            plt.legend(title="Dia", fontsize=9)
-            plt.grid(axis='y', linestyle='--', alpha=0.5)
-            plt.tight_layout()
-
-            buffer = BytesIO()
-            plt.savefig(buffer, format="png", facecolor='white', bbox_inches="tight")
-            plt.close()
-            buffer.seek(0)
-            return buffer.getvalue()
-
-        if polos and len(polos) > 1 and dias_intervalo > 5:
-            resultados = []
-            for polo in polos:
-                dados_p = dados[dados["POLO"] == polo]
-                agrupado = dados_p.groupby("DIA").size()
-
-                if agrupado.empty:
-                    continue
-
-                plt.figure(figsize=(10, 5))
-                agrupado.plot(kind="bar", color="#2CA02C")
-                for i, v in enumerate(agrupado):
-                    plt.text(i, v + 0.2, str(v), ha='center', fontsize=8)
-
-                nome_ceo = POLO_PARA_NOME.get(polo, polo.upper())
-                plt.title(f"Reclamações por Dia - {nome_ceo}", fontsize=13)
-                plt.xlabel("Dia")
-                plt.ylabel("Qtd de Reclamações")
-                plt.xticks(rotation=45)
-                plt.grid(axis='y', linestyle='--', alpha=0.5)
-                plt.tight_layout()
-
-                buffer = BytesIO()
-                plt.savefig(buffer, format="png", facecolor='white', bbox_inches="tight")
-                plt.close()
-                buffer.seek(0)
-                resultados.append(buffer)
-
-            return resultados if resultados else None
-
         return None
 
     except Exception as e:
-        logging.exception("❌ Erro ao gerar gráfico por polo:")
+        logging.exception(f"Erro ao gerar gráfico: {e}")
         return None
