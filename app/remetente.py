@@ -47,7 +47,6 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
             return {
                 "mensagem": (
                     "🤖 *Comandos disponíveis:*"
-                    "- relatorio 3 dias todos os ceos"
                     "- relatorio 1 dia santana"
                     "- relatorio 5 dias gopouva"
                     "- relatorio 10 dias freguesia"
@@ -70,6 +69,7 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
 
         respostas = []
 
+        # ✅ Caso 1: múltiplos CEOs, dias > 5 → gráfico separado por CEO
         if dias > 5 and len(polos) > 1:
             for polo in polos:
                 df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polo=polo)
@@ -82,8 +82,20 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
                             respostas.append({"imagem_bytes": imagem, "mensagem": resumo, "numero": numero})
                     else:
                         respostas.append({"imagem_bytes": imagens, "mensagem": resumo, "numero": numero})
+            return respostas if len(respostas) > 1 else respostas[0]
 
+        # ✅ Caso 2: múltiplos CEOs, dias ≤ 5 → gráfico único combinado
+        if dias <= 5 and len(polos) > 1:
+            df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polos=polos)
+            imagem_buffer = gerar_grafico_por_polo(df_filtrado, polos=polos, dias_intervalo=dias)
+            resumo = gerar_resumo_textual(df_filtrado, polos=polos, dias_total=dias)
+            return {
+                "imagem_bytes": imagem_buffer,
+                "mensagem": resumo,
+                "numero": numero
+            }
 
+        # ✅ Caso 3: único CEO → gráfico individual (setores ou dias)
         for polo in polos:
             df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polo=polo)
             resultado_imagem = gerar_grafico_por_polo(df_filtrado, polo=polo, polos=[polo], dias_intervalo=dias)
@@ -95,14 +107,6 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
                         respostas.append({"imagem_bytes": imagem, "mensagem": resumo, "numero": numero})
                 else:
                     respostas.append({"imagem_bytes": resultado_imagem, "mensagem": resumo, "numero": numero})
-
-        if not respostas and dias > 5 and len(polos) > 1:
-            df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polos=polos)
-            imagens_ceos = gerar_grafico_por_polo(df_filtrado, polos=polos, dias_intervalo=dias)
-            if imagens_ceos:
-                for i, imagem in enumerate(imagens_ceos):
-                    resumo = gerar_resumo_textual(df_intervalo, polo=polos[i], dias_total=dias)
-                    respostas.append({"imagem_bytes": imagem, "mensagem": resumo, "numero": numero})
 
         if respostas:
             return respostas if len(respostas) > 1 else respostas[0]

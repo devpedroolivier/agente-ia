@@ -27,6 +27,9 @@ shutil.copy(mais_recente, destino)
 print(f"✅ Arquivo copiado: {os.path.basename(mais_recente)}")
 
 # Git commit e push automático
+# Git commit e push automático com rebase
 subprocess.run(["git", "add", "."], cwd=repositorio)
 subprocess.run(["git", "commit", "-m", f"Atualiza dados {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"], cwd=repositorio)
+subprocess.run(["git", "pull", "--rebase"], cwd=repositorio)  # Adicionado
 subprocess.run(["git", "push"], cwd=repositorio)
+
