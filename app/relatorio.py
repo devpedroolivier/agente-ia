@@ -73,7 +73,7 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
             plt.savefig(buffer, format="png", bbox_inches="tight", facecolor="white")
             plt.close()
             buffer.seek(0)
-            return buffer
+            return buffer.getvalue()
 
         if polos and len(polos) > 1 and dias_intervalo <= 5:
             agrupado = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
@@ -98,7 +98,7 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
             plt.savefig(buffer, format="png", facecolor='white', bbox_inches="tight")
             plt.close()
             buffer.seek(0)
-            return buffer
+            return buffer.getvalue()
 
         if polos and len(polos) > 1 and dias_intervalo > 5:
             resultados = []

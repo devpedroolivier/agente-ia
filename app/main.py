@@ -1,4 +1,5 @@
 
+from io import BytesIO
 import os
 import requests
 from fastapi import FastAPI, Request
@@ -18,7 +19,7 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
         try:
             upload_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/media"
             files = {
-                "file": ("grafico.png", imagem_bytes, "image/png")
+                "file": ("grafico.png", BytesIO(imagem_bytes), "image/png")
             }
             data = {
                 "messaging_product": "whatsapp",
