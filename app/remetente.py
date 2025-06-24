@@ -22,7 +22,6 @@ def extrair_polos(mensagem):
 
     if "todos" in mensagem:
         return ["f", "s", "m", "g", "p", "n"]
-
     if "freguesia" in mensagem:
         polos.append("f")
     if "santana" in mensagem:
@@ -38,10 +37,7 @@ def extrair_polos(mensagem):
     if "extremo norte" in mensagem or "norte" in mensagem:
         polos.append("n")
 
-    # Remove duplicatas
     return list(dict.fromkeys(polos)) or ["f"]
-
-
 
 def enviar_resposta_padrao(numero, mensagem_usuario):
     try:
@@ -51,6 +47,7 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
             return {
                 "mensagem": (
                     "🤖 *Comandos disponíveis:*"
+                    "- relatorio 3 dias todos os ceos"
                     "- relatorio 1 dia santana"
                     "- relatorio 5 dias gopouva"
                     "- relatorio 10 dias freguesia"
@@ -94,6 +91,14 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
                         respostas.append({"imagem_bytes": imagem, "mensagem": resumo, "numero": numero})
                 else:
                     respostas.append({"imagem_bytes": resultado_imagem, "mensagem": resumo, "numero": numero})
+
+        if not respostas and dias > 5 and len(polos) > 1:
+            df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polos=polos)
+            imagens_ceos = gerar_grafico_por_polo(df_filtrado, polos=polos, dias_intervalo=dias)
+            if imagens_ceos:
+                for i, imagem in enumerate(imagens_ceos):
+                    resumo = gerar_resumo_textual(df_intervalo, polo=polos[i], dias_total=dias)
+                    respostas.append({"imagem_bytes": imagem, "mensagem": resumo, "numero": numero})
 
         if respostas:
             return respostas if len(respostas) > 1 else respostas[0]
