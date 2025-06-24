@@ -59,6 +59,9 @@ def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
         return texto
 
     polo = polo or (polos[0] if polos else None)
+    if not polo:
+        return "⚠️ Nenhuma reclamação encontrada no período solicitado."
+
     nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
     total = len(df_filtrado)
     media = total / dias_total if dias_total else 0

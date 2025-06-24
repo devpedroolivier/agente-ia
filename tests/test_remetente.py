@@ -20,3 +20,7 @@ def test_relatorio_valido_santana():
     assert resposta["mensagem"]
     assert "imagem_bytes" in resposta or "imagem" in resposta
     assert resposta.get("imagem_bytes") or resposta.get("imagem")
+    
+def test_relatorio_varios_ceos():
+    resposta = enviar_resposta_padrao("5511999999999", "relatorio 2 dias freguesia santana pirituba")
+    assert isinstance(resposta, dict) or isinstance(resposta, list)
