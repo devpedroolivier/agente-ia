@@ -9,12 +9,12 @@ def test_interpretar_mensagem():
     res = interpretar_mensagem("relatório setor 042 pirituba 3 dias")
     assert res["dias"] == 3
     assert res["setor"] == "042"
-    assert res["polo"] == "s"
+    assert res["polo"] == "p"
 
 def test_interpretar_mensagem_sem_dias():
     res = interpretar_mensagem("relatório setor 042 pirituba")
     assert res["dias"] == 1
-    assert res["polo"] == "s"
+    assert res["polo"] == "p"
 
 def test_interpretar_mensagem_sem_polo():
     res = interpretar_mensagem("relatório setor 042 3 dias")
