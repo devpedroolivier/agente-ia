@@ -13,42 +13,124 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
 
         dados = dados.copy()
         dados["DIA"] = dados["DH_ACATAMENTO"].dt.strftime("%d/%m")
-        dados["POLO"] = dados["SETOR"].map(SETOR_PARA_POLO).map(lambda p: POLO_PARA_NOME.get(p, p.upper()))
+        dados["POLO"] = dados["SETOR"].map(SETOR_PARA_POLO)
+        dados["CEO"] = dados["POLO"].map(POLO_PARA_NOME)
 
-        # Agrupar por CEO (POLO) no eixo X e por DIA na legenda
-        agrupado = dados.groupby(["POLO", "DIA"]).size().unstack(fill_value=0)
+        resultados = []
 
-        # Garantir que todos os CEOs estejam no gráfico
-        todos_ceos = sorted(set(POLO_PARA_NOME.values()))
-        agrupado = agrupado.reindex(todos_ceos, fill_value=0)
+        if polos and len(polos) == 1 and dias_intervalo == 1:
+            setores = dados["SETOR"].unique().tolist()
+            setores.sort()
+            blocos = [setores[i:i+7] for i in range(0, len(setores), 7)]
 
-        if agrupado.empty:
-            logging.warning("⚠️ Nenhum dado após agrupamento por polo e dia.")
-            return None
+            for idx, bloco in enumerate(blocos):
+                df_blocado = dados[dados["SETOR"].isin(bloco)]
+                agrupado = df_blocado["SETOR"].value_counts().reindex(bloco, fill_value=0)
 
-        plt.figure(figsize=(12, 6))
-        agrupado.plot(kind="bar", ax=plt.gca())
+                if agrupado.empty:
+                    continue
 
-        plt.title(f"Reclamações por CEO (últimos {dias_intervalo} dias)", fontsize=14, fontweight='bold')
-        plt.xlabel("CEO", fontsize=12)
-        plt.ylabel("Nº de Reclamações", fontsize=12)
-        plt.xticks(rotation=30, ha='right')
-        plt.legend(title="Dia", fontsize=9)
-        plt.grid(axis='y', linestyle='--', alpha=0.5)
-        plt.tight_layout()
+                plt.figure(figsize=(10, 5))
+                agrupado.plot(kind="bar", color="#2D7DD2")
+                for i, v in enumerate(agrupado):
+                    plt.text(i, v + 0.2, str(v), ha='center', fontsize=8)
 
-        # Exportar imagem
-        if caminho_saida:
-            os.makedirs(os.path.dirname(caminho_saida), exist_ok=True)
-            plt.savefig(caminho_saida, facecolor='white', bbox_inches="tight")
-            plt.close()
-            return caminho_saida
-        else:
+                plt.title(f"Reclamações por Setor (1 dia) - Gráfico {idx + 1}", fontsize=13)
+                plt.xlabel("Setor")
+                plt.ylabel("Qtd de Reclamações")
+                plt.xticks(rotation=45)
+                plt.grid(axis='y', linestyle='--', alpha=0.5)
+                plt.tight_layout()
+
+                buffer = BytesIO()
+                plt.savefig(buffer, format='png', bbox_inches="tight", facecolor='white')
+                plt.close()
+                buffer.seek(0)
+                resultados.append(buffer)
+
+            return resultados if resultados else None
+
+        if polos and len(polos) == 1 and dias_intervalo > 1:
+            agrupado = dados.groupby("DIA").size()
+
+            if agrupado.empty:
+                return None
+
+            plt.figure(figsize=(10, 5))
+            agrupado.plot(kind="bar", color="#1f77b4")
+            for i, v in enumerate(agrupado):
+                plt.text(i, v + 0.2, str(v), ha='center', fontsize=8)
+
+            nome_ceo = POLO_PARA_NOME.get(polos[0], polos[0].upper())
+            plt.title(f"Reclamações por Dia - {nome_ceo}", fontsize=13)
+            plt.xlabel("Dia")
+            plt.ylabel("Qtd de Reclamações")
+            plt.xticks(rotation=45)
+            plt.grid(axis='y', linestyle='--', alpha=0.5)
+            plt.tight_layout()
+
             buffer = BytesIO()
-            plt.savefig(buffer, format='png', facecolor='white', bbox_inches="tight")
+            plt.savefig(buffer, format="png", bbox_inches="tight", facecolor="white")
             plt.close()
             buffer.seek(0)
             return buffer
+
+        if polos and len(polos) > 1 and dias_intervalo <= 5:
+            agrupado = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
+            todos_ceos = sorted(set(POLO_PARA_NOME.values()))
+            agrupado = agrupado.reindex(todos_ceos, fill_value=0)
+
+            if agrupado.empty:
+                return None
+
+            plt.figure(figsize=(12, 6))
+            agrupado.plot(kind="bar", ax=plt.gca())
+
+            plt.title(f"Reclamações por CEO (últimos {dias_intervalo} dias)", fontsize=14, fontweight='bold')
+            plt.xlabel("CEO")
+            plt.ylabel("Qtd de Reclamações")
+            plt.xticks(rotation=30, ha='right')
+            plt.legend(title="Dia", fontsize=9)
+            plt.grid(axis='y', linestyle='--', alpha=0.5)
+            plt.tight_layout()
+
+            buffer = BytesIO()
+            plt.savefig(buffer, format="png", facecolor='white', bbox_inches="tight")
+            plt.close()
+            buffer.seek(0)
+            return buffer
+
+        if polos and len(polos) > 1 and dias_intervalo > 5:
+            resultados = []
+            for polo in polos:
+                dados_p = dados[dados["POLO"] == polo]
+                agrupado = dados_p.groupby("DIA").size()
+
+                if agrupado.empty:
+                    continue
+
+                plt.figure(figsize=(10, 5))
+                agrupado.plot(kind="bar", color="#2CA02C")
+                for i, v in enumerate(agrupado):
+                    plt.text(i, v + 0.2, str(v), ha='center', fontsize=8)
+
+                nome_ceo = POLO_PARA_NOME.get(polo, polo.upper())
+                plt.title(f"Reclamações por Dia - {nome_ceo}", fontsize=13)
+                plt.xlabel("Dia")
+                plt.ylabel("Qtd de Reclamações")
+                plt.xticks(rotation=45)
+                plt.grid(axis='y', linestyle='--', alpha=0.5)
+                plt.tight_layout()
+
+                buffer = BytesIO()
+                plt.savefig(buffer, format="png", facecolor='white', bbox_inches="tight")
+                plt.close()
+                buffer.seek(0)
+                resultados.append(buffer)
+
+            return resultados if resultados else None
+
+        return None
 
     except Exception as e:
         logging.exception("❌ Erro ao gerar gráfico por polo:")
