@@ -21,7 +21,7 @@ def carregar_dados_mais_recentes(filtro_nome=None):
     arquivo_mais_recente = max(arquivos, key=lambda f: os.path.getmtime(os.path.join(pasta_dados, f)))
     caminho_completo = os.path.join(pasta_dados, arquivo_mais_recente)
 
-    print(f"📂 Arquivo carregado: {arquivo_mais_recente}")
+    print(f"Arquivo carregado: {arquivo_mais_recente}")
     return pd.read_excel(caminho_completo)
 
 def transformar_dados_para_intervalo(df: pd.DataFrame, dias: int = 1) -> pd.DataFrame:
@@ -35,22 +35,37 @@ def transformar_dados_para_intervalo(df: pd.DataFrame, dias: int = 1) -> pd.Data
 
     return df[df['DH_ACATAMENTO'].dt.date >= data_limite]
 
-def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = None) -> pd.DataFrame:
+def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = None, polos: list = None) -> pd.DataFrame:
     if setor:
         return df[df["SETOR"] == setor]
+    elif polos:
+        return df[df["POLO"].isin(polos)]
     elif polo:
         return df[df["POLO"] == polo]
     return df
 
-def gerar_resumo_textual(df_filtrado, polo, dias_total=10):
+def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
+    from app.mapeamento import SETOR_PARA_POLO, POLO_PARA_NOME
+
+    if polos and len(polos) > 1:
+        df_filtrado = df_filtrado.copy()
+        total_geral = len(df_filtrado)
+        texto = f"Resumo das Reclamações nos últimos {dias_total} dias:\n"
+        texto += f"Total: {total_geral} registros\n"
+        for p in polos:
+            nome = POLO_PARA_NOME.get(p, p.upper())
+            qtd = len(df_filtrado[df_filtrado["POLO"] == p])
+            texto += f"- {nome}: {qtd}\n"
+        return texto
+
+    polo = polo or (polos[0] if polos else None)
+    nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
     total = len(df_filtrado)
     media = total / dias_total if dias_total else 0
-
     menor_data = df_filtrado["DH_ACATAMENTO"].min()
     maior_data = df_filtrado["DH_ACATAMENTO"].max()
-    nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
 
-    resumo = f"""📊 *Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)*
+    resumo = f"""Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)
 
 • Total: {total} reclamações
 • Média diária: {media:.1f}

@@ -1,3 +1,4 @@
+
 import logging
 import re
 import warnings
@@ -16,22 +17,25 @@ def extrair_dias(mensagem):
     match = re.search(r"(\d+)\s*dias?", mensagem)
     return int(match.group(1)) if match else 1
 
-# 🔍 Extração inteligente do polo com base em palavras-chave
-def extrair_polo(mensagem):
+# 🔍 Extração inteligente de múltiplos polos com base em palavras-chave
+def extrair_polos(mensagem):
     mensagem = mensagem.lower()
+    polos = []
+    if "todos" in mensagem:
+        return ["f", "s", "m", "p"]
     if "freguesia" in mensagem:
-        return "f"
-    elif "santana" in mensagem:
-        return "s"
-    elif "pimentas" in mensagem:
-        return "m"
-    elif "pirituba" in mensagem:
-        return "p"
-    elif "gopouva" in mensagem:
-        return "g"
-    elif "extremo norte" in mensagem or "norte" in mensagem:
-        return "n"
-    return None
+        polos.append("f")
+    if "santana" in mensagem:
+        polos.append("s")
+    if "pimentas" in mensagem:
+        polos.append("m")
+    if "pirituba" in mensagem:
+        polos.append("p")
+    if "gopouva" in mensagem:
+        polos.append("g")
+    if "extremo norte" in mensagem or "norte" in mensagem:
+        polos.append("n")
+    return polos or ["f"]  # padrão para evitar lista vazia
 
 # ✅ Função principal com tratamento de comandos inválidos e ajuda
 def enviar_resposta_padrao(numero, mensagem_usuario):
@@ -52,9 +56,9 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
             }
 
         dias = extrair_dias(mensagem_usuario)
-        polo = extrair_polo(mensagem_usuario)
+        polos = extrair_polos(mensagem_usuario)
 
-        if polo is None:
+        if not polos:
             return {
                 "mensagem": "❌ Não entendi o polo informado. Envie algo como: *relatorio 3 dias santana*",
                 "numero": numero
@@ -62,17 +66,30 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
 
         df = carregar_dados_mais_recentes()
         df_intervalo = transformar_dados_para_intervalo(df, dias)
-        df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polo=polo)
 
-        imagem_buffer = gerar_grafico_por_polo(df_filtrado, polo=polo, dias_intervalo=dias)
+        respostas = []
 
-        if imagem_buffer:
-            resumo = gerar_resumo_textual(df_filtrado, polo=polo, dias_total=dias)
+        # Se até 5 dias e múltiplos CEOs → um gráfico combinado
+        if dias <= 5 and len(polos) > 1:
+            df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polos=polos)
+            imagem_buffer = gerar_grafico_por_polo(df_filtrado, polos=polos, dias_intervalo=dias)
+            resumo = gerar_resumo_textual(df_filtrado, polos=polos, dias_total=dias)
             return {
                 "imagem_bytes": imagem_buffer,
                 "mensagem": resumo,
                 "numero": numero
             }
+
+        # Caso contrário → gerar gráfico por polo
+        for polo in polos:
+            df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polo=polo)
+            imagem_buffer = gerar_grafico_por_polo(df_filtrado, polo=polo, dias_intervalo=dias)
+            resumo = gerar_resumo_textual(df_filtrado, polo=polo, dias_total=dias)
+            if imagem_buffer:
+                respostas.append({"imagem_bytes": imagem_buffer, "mensagem": resumo, "numero": numero})
+
+        if respostas:
+            return respostas if len(respostas) > 1 else respostas[0]
         else:
             return {
                 "mensagem": "⚠️ Nenhuma reclamação encontrada no período solicitado.",
