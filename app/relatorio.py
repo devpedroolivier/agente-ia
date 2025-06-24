@@ -75,30 +75,58 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
             buffer.seek(0)
             return buffer.getvalue()
 
-        # ➕ Novo bloco: gráfico por CEO com múltiplos dias (barra agrupada com labels)
-        if not polos and dias_intervalo > 1:
-            tabela = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
+        if polos and len(polos) > 1 and dias_intervalo <= 5:
+            agrupado = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
+            todos_ceos = sorted(set(POLO_PARA_NOME.values()))
+            agrupado = agrupado.reindex(todos_ceos, fill_value=0)
 
-            ceos_ordenados = ['CEO Guarulhos', 'CEO São Miguel', 'CEO Itaim', 'CEO Vila Maria', 'CEO Guaianases']
-            for ceo in ceos_ordenados:
-                if ceo not in tabela.index:
-                    tabela.loc[ceo] = 0
-            tabela = tabela.loc[ceos_ordenados]
+            if agrupado.empty:
+                return None
 
-            ax = tabela.T.plot(kind="bar", figsize=(10, 6))
+            plt.figure(figsize=(12, 6))
+            agrupado.plot(kind="bar", ax=plt.gca())
 
-            for container in ax.containers:
-                ax.bar_label(container, label_type='edge', fontsize=8, padding=2)
-
-            plt.title("Reclamações por CEO nos Últimos 5 Dias")
-            plt.xlabel("Dias")
-            plt.ylabel("Quantidade de Reclamações")
-            plt.xticks(rotation=0)
-            plt.legend(title="CEO")
+            plt.title(f"Reclamações por CEO (últimos {dias_intervalo} dias)", fontsize=14, fontweight='bold')
+            plt.xlabel("CEO")
+            plt.ylabel("Qtd de Reclamações")
+            plt.xticks(rotation=30, ha='right')
+            plt.legend(title="Dia", fontsize=9)
+            plt.grid(axis='y', linestyle='--', alpha=0.5)
             plt.tight_layout()
 
             buffer = BytesIO()
-            plt.savefig(buffer, format="png", bbox_inches="tight", facecolor="white")
+            plt.savefig(buffer, format="png", facecolor='white', bbox_inches="tight")
+            plt.close()
+            buffer.seek(0)
+            return buffer.getvalue()
+
+        if polos and len(polos) > 1 and dias_intervalo <= 5:
+            agrupado = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
+            todos_ceos = sorted(set(POLO_PARA_NOME.values()))
+            for ceo in todos_ceos:
+                if ceo not in agrupado.index:
+                    agrupado.loc[ceo] = 0
+            agrupado = agrupado.loc[todos_ceos]
+
+            if agrupado.empty:
+                return None
+
+            fig, ax = plt.subplots(figsize=(12, 6))
+            grouped_plot = agrupado.T.plot(kind="bar", ax=ax)
+
+            for container in grouped_plot.containers:
+                grouped_plot.bar_label(container, label_type='edge', fontsize=8, padding=2)
+
+            plt.title(f"Reclamações por CEO (últimos {dias_intervalo} dias)", fontsize=14, fontweight='bold')
+            plt.xlabel("CEO")
+            plt.ylabel("Qtd de Reclamações")
+            plt.xticks(rotation=0)
+            plt.legend(title="Dia", fontsize=9)
+            plt.grid(axis='y', linestyle='--', alpha=0.5)
+            plt.tight_layout()
+
+            buffer = BytesIO()
+            plt.savefig(buffer, format="png", facecolor='white', bbox_inches="tight")
             plt.close()
             buffer.seek(0)
             return buffer.getvalue()
@@ -106,5 +134,5 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
         return None
 
     except Exception as e:
-        logging.exception(f"Erro ao gerar gráfico: {e}")
+        logging.exception("❌ Erro ao gerar gráfico por polo:")
         return None
