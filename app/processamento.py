@@ -21,7 +21,7 @@ def carregar_dados_mais_recentes(filtro_nome=None):
     arquivo_mais_recente = max(arquivos, key=lambda f: os.path.getmtime(os.path.join(pasta_dados, f)))
     caminho_completo = os.path.join(pasta_dados, arquivo_mais_recente)
 
-    print(f"Arquivo carregado: {arquivo_mais_recente}")
+    print(f"📂 Arquivo carregado: {arquivo_mais_recente}")
     return pd.read_excel(caminho_completo)
 
 def transformar_dados_para_intervalo(df: pd.DataFrame, dias: int = 1) -> pd.DataFrame:
@@ -74,7 +74,6 @@ def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
 • Período: {menor_data.strftime('%d/%m')} a {maior_data.strftime('%d/%m')}
 """
     return resumo
-
 
 def carregar_setores_completos():
     df = carregar_dados_mais_recentes()
