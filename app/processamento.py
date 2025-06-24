@@ -58,14 +58,14 @@ def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
             texto += f"- {nome}: {qtd}\n"
         return texto
 
-    # Caso 1 polo
     polo = polo or (polos[0] if polos else None)
     nome_polo = POLO_PARA_NOME.get(polo.lower(), polo.upper())
     total = len(df_filtrado)
     media = total / dias_total if dias_total else 0
 
-    menor_data = pd.to_datetime(df_filtrado["DH_ACATAMENTO"].min())
-    maior_data = pd.to_datetime(df_filtrado["DH_ACATAMENTO"].max())
+    df_filtrado["DH_ACATAMENTO"] = pd.to_datetime(df_filtrado["DH_ACATAMENTO"])
+    menor_data = df_filtrado["DH_ACATAMENTO"].min()
+    maior_data = df_filtrado["DH_ACATAMENTO"].max()
 
     resumo = f"""Resumo das Reclamações – Polo {nome_polo.title()} (últimos {dias_total} dias)
 
