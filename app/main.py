@@ -1,5 +1,4 @@
 
-from io import BytesIO
 import os
 import requests
 from fastapi import FastAPI, Request
@@ -14,27 +13,23 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
         "Authorization": f"Bearer {TOKEN}"
     }
 
+    # Upload da imagem para o servidor da Meta, se existir
     media_id = None
     if imagem_bytes:
-        try:
-            upload_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/media"
-            files = {
-                "file": ("grafico.png", BytesIO(imagem_bytes), "image/png")
-            }
-            data = {
-                "messaging_product": "whatsapp",
-                "type": "image"
-            }
-            print("[DEBUG] Fazendo upload da imagem para o WhatsApp...")
-            response = requests.post(upload_url, headers=headers, data=data, files=files)
-            print("[DEBUG] Resposta do upload:", response.status_code, response.text)
-            response.raise_for_status()
-            media_id = response.json().get("id")
+        upload_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/media"
+        files = {
+            "file": ("grafico.png", imagem_bytes, "image/png")
+        }
+        data = {
+            "messaging_product": "whatsapp",
+            "type": "image"
+        }
+        response = requests.post(upload_url, headers=headers, data=data, files=files)
+        response_json = response.json()
+        media_id = response_json.get("id")
 
-        except Exception as e:
-            print(f"❌ Falha ao fazer upload da imagem: {e}")
-            return None
-
+    # Envio da mensagem
+    mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
     payload = {
         "messaging_product": "whatsapp",
         "to": numero,
@@ -43,18 +38,7 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
         "image": {"id": media_id, "caption": mensagem} if media_id else None
     }
 
-    try:
-        mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
-        print("[DEBUG] Enviando mensagem para:", numero)
-        print("[DEBUG] Payload:", payload)
-        response = requests.post(mensagem_url, headers=headers, json=payload)
-        print("[DEBUG] Resposta do envio:", response.status_code, response.text)
-        response.raise_for_status()
-        return response
-    except Exception as e:
-        print(f"❌ Falha ao enviar mensagem para {numero}: {e}")
-        return None
-
+    return requests.post(mensagem_url, headers=headers, json=payload)
 
 @app.post("/webhook")
 async def receber_webhook(request: Request):
@@ -68,12 +52,15 @@ async def receber_webhook(request: Request):
             numero = msg["from"]
             texto = msg["text"]["body"]
 
-            resposta = enviar_resposta_padrao(numero, texto)
-            enviar_mensagem_whatsapp(
-                numero=resposta["numero"],
-                mensagem=resposta["mensagem"],
-                imagem_bytes=resposta.get("imagem_bytes")
-            )
+            respostas = enviar_resposta_padrao(numero, texto)
+            if not isinstance(respostas, list):
+                respostas = [respostas]
+            for resposta in respostas:
+                enviar_mensagem_whatsapp(
+                    numero=resposta["numero"],
+                    mensagem=resposta["mensagem"],
+                    imagem_bytes=resposta.get("imagem_bytes")
+                )
         return {"status": "ok"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
