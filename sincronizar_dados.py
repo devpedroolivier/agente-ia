@@ -7,7 +7,7 @@ from datetime import datetime
 origem = r"C:\Users\Pedri\Downloads"
 
 # Caminho do repositório local clonado
-repositorio = r"C:\Users\Pedri\Documentos\GitHub\agente-ia"
+repositorio = r"C:\Users\Pedri\agente-ia"
 destino = os.path.join(repositorio, "data")
 
 # ⚠️ Remove a pasta 'data' antiga se existir
