@@ -25,8 +25,9 @@ def carregar_dados_mais_recentes(filtro_nome=None):
     return pd.read_excel(caminho_completo)
 
 def transformar_dados_para_intervalo(df: pd.DataFrame, dias: int = 1) -> pd.DataFrame:
-    df['SETOR'] = df['SETOR ABASTECIMENTO'].astype(str).str[:3]
-    df['POLO'] = df['SETOR'].map(SETOR_PARA_POLO)
+    df['SETOR_CODIGO'] = df['SETOR ABASTECIMENTO'].astype(str).str[:3]
+    df['SETOR_NOME'] = df['SETOR ABASTECIMENTO']
+    df['POLO'] = df['SETOR_CODIGO'].map(SETOR_PARA_POLO)  # 🔹 Mantém a versão correta
     df['POLO_NOME'] = df['POLO'].map(POLO_PARA_NOME)
     df['DH_ACATAMENTO'] = pd.to_datetime(df['DH_ACATAMENTO'], errors='coerce')
 
@@ -34,6 +35,7 @@ def transformar_dados_para_intervalo(df: pd.DataFrame, dias: int = 1) -> pd.Data
     data_limite = datetime.now().date() - timedelta(days=dias - 1)
 
     return df[df['DH_ACATAMENTO'].dt.date >= data_limite]
+
 
 def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = None, polos: list = None) -> pd.DataFrame:
     if setor:

@@ -46,13 +46,13 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
         resultados = []
 
         if polos and len(polos) == 1 and dias_intervalo == 1:
-            setores = dados["SETOR"].unique().tolist()
+            setores = dados["SETOR_NOME"].unique().tolist()
             setores.sort()
             blocos = [setores[i:i + 7] for i in range(0, len(setores), 7)]
 
             for idx, bloco in enumerate(blocos):
-                df_blocado = dados[dados["SETOR"].isin(bloco)]
-                agrupado = df_blocado["SETOR"].value_counts().reindex(bloco, fill_value=0)
+                df_blocado = dados[dados["SETOR_NOME"].isin(bloco)]
+                agrupado = df_blocado["SETOR_NOME"].value_counts().reindex(bloco, fill_value=0)
 
                 if agrupado.empty:
                     continue
@@ -65,7 +65,7 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
                 plt.title(f"Reclamações por Setor (1 dia) - Gráfico {idx + 1}")
                 plt.xlabel("Setor")
                 plt.ylabel("Qtd de Reclamações")
-                plt.xticks(rotation=45)
+                plt.xticks(rotation=45, ha='right')
                 plt.grid(axis='y', linestyle='--', alpha=0.5)
                 plt.figtext(0.99, 0.01, "Gerado automaticamente por BlueAI", ha='right', fontsize=8, color='gray')
                 plt.tight_layout()
