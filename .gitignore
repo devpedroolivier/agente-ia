@@ -1,6 +1,6 @@
-# Ignorar arquivos e pastas temporárias
 .env
 __pycache__/
+graficos/
 *.pyc
 *.pyo
 *.pyd
@@ -9,17 +9,4 @@ __pycache__/
 .idea/
 .vscode/
 venv/
-
-# Ignorar gráficos e dados gerados
-graficos/
-
-# Permitir apenas o que está dentro do projeto
-/*
-
-# Exceções: manter estes arquivos/pastas
-!/.gitignore
-!/*.py
-!/data/
-!/app/
-!/app/*.py
-!/README.md
+app/sincronizar_dados.py
