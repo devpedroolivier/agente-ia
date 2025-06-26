@@ -36,4 +36,5 @@ def test_relatorio_multiplos_ceos():
             assert "imagem_bytes" in r or "imagem" in r or "nenhuma reclamação" in r["mensagem"].lower()
     else:
         assert "mensagem" in resposta
-        assert "imagem_bytes" in resposta or "imagem" in resposta or "nenhuma reclamação" in resposta["messagem"].lower()
+        assert "imagem_bytes" in resposta or "imagem" in resposta or "nenhuma reclamação" in resposta["mensagem"].lower()
+
