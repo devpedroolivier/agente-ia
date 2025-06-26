@@ -1,4 +1,3 @@
-
 import logging
 import re
 import warnings
@@ -9,6 +8,7 @@ from app.processamento import (
     filtrar_por_setor_ou_polo,
     gerar_resumo_textual
 )
+from app.respostas import mensagem_boas_vindas  # 🔹 Import da resposta de boas-vindas
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -37,18 +37,34 @@ def extrair_polos(mensagem):
         polos.append("n")
     return list(dict.fromkeys(polos)) or ["f"]
 
+# 🔹 Nova função para detectar saudações
+def eh_saudacao(mensagem):
+    saudacoes = [
+        "oi", "olá", "ola", "e aí", "fala", "tudo bem", "tudo bom",
+        "bom dia", "boa tarde", "boa noite", "salve"
+    ]
+    mensagem = mensagem.lower()
+    return any(s in mensagem for s in saudacoes)
+
 def enviar_resposta_padrao(numero, mensagem_usuario):
     try:
         mensagem_usuario = mensagem_usuario.lower()
         print(f"[DEBUG] Mensagem recebida: {mensagem_usuario}")
 
+        # 🔹 Responde a mensagens de saudação com o menu
+        if eh_saudacao(mensagem_usuario):
+            return {
+                "mensagem": mensagem_boas_vindas(),
+                "numero": numero
+            }
+
         if any(p in mensagem_usuario for p in ["ajuda", "comandos", "menu", "opções"]):
             return {
                 "mensagem": (
-                    "🤖 *Comandos disponíveis:*"
-                    "- relatorio 1 dia santana"
-                    "- relatorio 5 dias gopouva"
-                    "- relatorio 10 dias freguesia"
+                    "🤖 *Comandos disponíveis:*\n"
+                    "- relatorio 1 dia santana\n"
+                    "- relatorio 5 dias gopouva\n"
+                    "- relatorio 10 dias freguesia\n"
                     "- relatorio 3 dias extremo norte"
                 ),
                 "numero": numero
