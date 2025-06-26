@@ -15,6 +15,15 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
         dados["POLO"] = dados["SETOR"].map(SETOR_PARA_POLO)
         dados["CEO"] = dados["POLO"].map(POLO_PARA_NOME)
 
+        # 🔧 Nova coluna: CEO_NORMALIZADO (agrupa Guarulhos de verdade)
+        def normalizar_ceo(nome_ceo):
+            if nome_ceo == "CEO Guarulhos":
+                return "CEO Guarulhos"
+            return nome_ceo
+
+        dados["CEO_NORMALIZADO"] = dados["CEO"].apply(normalizar_ceo)
+
+
         resultados = []
 
         if polos and len(polos) == 1 and dias_intervalo == 1:
@@ -75,12 +84,13 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
             return buffer.getvalue()
 
         if polos and len(polos) > 1 and dias_intervalo <= 5:
-            agrupado = dados.groupby(["CEO", "DIA"]).size().unstack(fill_value=0)
-            todos_ceos = sorted(set(POLO_PARA_NOME.values()))
+            agrupado = dados.groupby(["CEO_NORMALIZADO", "DIA"]).size().unstack(fill_value=0)
+            todos_ceos = sorted(set(dados["CEO_NORMALIZADO"]))
             for ceo in todos_ceos:
                 if ceo not in agrupado.index:
                     agrupado.loc[ceo] = 0
             agrupado = agrupado.loc[todos_ceos]
+
 
             if agrupado.empty:
                 return None
