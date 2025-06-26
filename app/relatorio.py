@@ -33,7 +33,7 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
 
         dados = dados.copy()
         dados["DIA"] = dados["DH_ACATAMENTO"].dt.strftime("%d/%m")
-        dados["POLO"] = dados["SETOR"].map(SETOR_PARA_POLO)
+        dados["POLO"] = dados["SETOR_CODIGO"].map(SETOR_PARA_POLO)
         dados["CEO"] = dados["POLO"].map(POLO_PARA_NOME)
 
         def normalizar_ceo(nome_ceo):
