@@ -4,10 +4,10 @@ import subprocess
 from datetime import datetime
 
 # Caminho de origem: onde estão os arquivos atualizados
-origem = r"C:\Users\poliveira.eficien.SBSP\Desktop\automação\reclamacoes_sabesp\data"
+origem = r"C:\Users\Pedri\Downloads"
 
 # Caminho do repositório local clonado
-repositorio = r"C:\Users\poliveira.eficien.SBSP\Desktop\agente IA"
+repositorio = r"C:\Users\Pedri\OneDrive\Documentos\GitHub\agente-ia"
 destino = os.path.join(repositorio, "data")
 
 # ⚠️ Remove a pasta 'data' antiga se existir
