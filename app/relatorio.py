@@ -5,7 +5,7 @@ import matplotlib
 from io import BytesIO
 from app.mapeamento import POLO_PARA_NOME, SETOR_PARA_POLO
 
-# 🔧 Configurações visuais globais
+# Estilo global
 matplotlib.rcParams.update({
     'font.size': 10,
     'axes.titlesize': 14,
@@ -16,7 +16,7 @@ matplotlib.rcParams.update({
     'figure.titlesize': 14
 })
 
-# 🎨 Cores fixas por CEO
+# Cores por CEO
 CORES_CEO = {
     "CEO Freguesia": "#1f77b4",
     "CEO Santana": "#ff7f0e",
@@ -45,7 +45,6 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
 
         resultados = []
 
-        # 1 CEO, 1 dia → gráfico por setor (em blocos de 7)
         if polos and len(polos) == 1 and dias_intervalo == 1:
             setores = dados["SETOR"].unique().tolist()
             setores.sort()
@@ -79,7 +78,6 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
 
             return resultados if resultados else None
 
-        # 1 CEO, >1 dia → gráfico de evolução por dia
         if polos and len(polos) == 1 and dias_intervalo > 1:
             agrupado = dados.groupby("DIA").size()
 
@@ -106,7 +104,7 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
             buffer.seek(0)
             return buffer.getvalue()
 
-        # Múltiplos CEOs → gráfico por CEO (último dia ou vários dias)
+        # ✅ MULTIPLOS CEOs – qualquer quantidade de dias
         if polos and len(polos) > 1:
             if dias_intervalo == 1:
                 agrupado = dados["CEO_NORMALIZADO"].value_counts().sort_index()
@@ -136,12 +134,12 @@ def gerar_grafico_por_polo(dados, polo=None, polos=None, dias_intervalo=1, camin
                 return buffer.getvalue()
 
             else:
-                agrupado = dados.groupby(["CEO_NORMALIZADO", "DIA"]).size().unstack(fill_value=0)
-                todos_ceos = sorted(set(dados["CEO_NORMALIZADO"]))
-                for ceo in todos_ceos:
-                    if ceo not in agrupado.index:
-                        agrupado.loc[ceo] = 0
-                agrupado = agrupado.loc[todos_ceos]
+                agrupado = (
+                    dados.groupby(["CEO_NORMALIZADO", "DIA"])
+                    .size()
+                    .unstack(fill_value=0)
+                    .groupby(level=0).sum()  # 🔥 AQUI UNIFICA "CEO Guarulhos"
+                )
 
                 if agrupado.empty:
                     return None
