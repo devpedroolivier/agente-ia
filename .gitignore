@@ -10,3 +10,13 @@ graficos/
 .vscode/
 venv/
 app/sincronizar_dados.py
+# .gitignore
+
+# Ignora tudo inicialmente
+/*
+
+# Permite scripts e a pasta data/
+!/*.py
+!/data/
+!/.gitignore
+!/README.md
