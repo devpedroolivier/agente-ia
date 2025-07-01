@@ -1,4 +1,3 @@
-
 import pandas as pd
 from datetime import datetime, timedelta
 from app.processamento import transformar_dados_para_intervalo, filtrar_por_setor_ou_polo
@@ -23,12 +22,11 @@ def test_transformar_dados_para_intervalo():
 
 def test_filtrar_por_setor_ou_polo():
     df = criar_df_exemplo()
-    df["SETOR"] = df["SETOR ABASTECIMENTO"].str[:3]
-    df["POLO"] = df["SETOR"].map(SETOR_PARA_POLO)
+    df = transformar_dados_para_intervalo(df, dias=15)  # transforma antes, adiciona SETOR_CODIGO e POLO
 
     # filtro por setor
     df_setor = filtrar_por_setor_ou_polo(df, setor="042")
-    assert all(df_setor["SETOR"] == "042")
+    assert all(df_setor["SETOR_CODIGO"] == "042")
 
     # filtro por polo
     df_polo = filtrar_por_setor_ou_polo(df, polo="n")
@@ -36,7 +34,6 @@ def test_filtrar_por_setor_ou_polo():
 
 def test_filtrar_por_multiplos_polos():
     df = criar_df_exemplo()
-    df["SETOR"] = df["SETOR ABASTECIMENTO"].str[:3]
-    df["POLO"] = df["SETOR"].map({"042": "p", "003": "f", "119": "n"})
+    df = transformar_dados_para_intervalo(df, dias=15)
     df_multi = filtrar_por_setor_ou_polo(df, polos=["p", "n"])
     assert all(df_multi["POLO"].isin(["p", "n"]))
