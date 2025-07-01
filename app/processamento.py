@@ -1,4 +1,3 @@
-
 import os
 import pandas as pd
 from datetime import datetime, timedelta
@@ -27,23 +26,28 @@ def carregar_dados_mais_recentes(filtro_nome=None):
 def transformar_dados_para_intervalo(df: pd.DataFrame, dias: int = 1) -> pd.DataFrame:
     df['SETOR_CODIGO'] = df['SETOR ABASTECIMENTO'].astype(str).str[:3]
     df['SETOR_NOME'] = df['SETOR ABASTECIMENTO']
-    df['POLO'] = df['SETOR_CODIGO'].map(SETOR_PARA_POLO)  # 🔹 Mantém a versão correta
+    df['POLO'] = df['SETOR_CODIGO'].map(SETOR_PARA_POLO)
     df['POLO_NOME'] = df['POLO'].map(POLO_PARA_NOME)
     df['DH_ACATAMENTO'] = pd.to_datetime(df['DH_ACATAMENTO'], errors='coerce')
 
-    df = df.dropna(subset=['DH_ACATAMENTO', 'POLO_NOME'])  # Garante integridade
+    df = df.dropna(subset=['DH_ACATAMENTO', 'POLO_NOME'])
     data_limite = datetime.now().date() - timedelta(days=dias - 1)
 
     return df[df['DH_ACATAMENTO'].dt.date >= data_limite]
 
-
 def filtrar_por_setor_ou_polo(df: pd.DataFrame, setor: str = None, polo: str = None, polos: list = None) -> pd.DataFrame:
     if setor:
-        return df[df["SETOR"] == setor]
+        df_filtrado = df[df["SETOR_CODIGO"] == setor]
+        print(f"[DEBUG] Filtrando por SETOR_CODIGO={setor}, retornou {len(df_filtrado)} linhas.")
+        return df_filtrado
     elif polos:
-        return df[df["POLO"].isin(polos)]
+        df_filtrado = df[df["POLO"].isin(polos)]
+        print(f"[DEBUG] Filtrando por POLOS={polos}, retornou {len(df_filtrado)} linhas.")
+        return df_filtrado
     elif polo:
-        return df[df["POLO"] == polo]
+        df_filtrado = df[df["POLO"] == polo]
+        print(f"[DEBUG] Filtrando por POLO={polo}, retornou {len(df_filtrado)} linhas.")
+        return df_filtrado
     return df
 
 def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
@@ -82,7 +86,6 @@ def gerar_resumo_textual(df_filtrado, polo=None, polos=None, dias_total=10):
         f"• Período: {menor_data.strftime('%d/%m')} a {maior_data.strftime('%d/%m')}"
     )
     return resumo
-
 
 def carregar_setores_completos():
     df = carregar_dados_mais_recentes()
