@@ -9,6 +9,7 @@ from app.processamento import (
     gerar_resumo_textual
 )
 from app.respostas import mensagem_boas_vindas
+from app.mapeamento import SETOR_PARA_POLO
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -19,6 +20,16 @@ def extrair_dias(mensagem):
 def extrair_polos(mensagem):
     mensagem = mensagem.lower()
     polos = []
+
+    # novo suporte para "setor XXX"
+    match = re.search(r"setor\s*(\d{3})", mensagem)
+    if match:
+        setor_codigo = match.group(1)
+        polo_do_setor = SETOR_PARA_POLO.get(setor_codigo)
+        if polo_do_setor:
+            print(f"[DEBUG] Encontrou setor {setor_codigo} mapeado para polo {polo_do_setor}")
+            return [polo_do_setor]
+
     if "todos" in mensagem:
         return ["f", "s", "m", "g", "p", "n"]
     if "freguesia" in mensagem:
@@ -35,6 +46,7 @@ def extrair_polos(mensagem):
         polos.append("p")
     if "extremo norte" in mensagem or "norte" in mensagem:
         polos.append("n")
+
     return list(dict.fromkeys(polos)) or ["f"]
 
 def eh_saudacao(mensagem):
