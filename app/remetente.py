@@ -8,7 +8,7 @@ from app.processamento import (
     filtrar_por_setor_ou_polo,
     gerar_resumo_textual
 )
-from app.respostas import mensagem_boas_vindas  # 🔹 Import da resposta de boas-vindas
+from app.respostas import mensagem_boas_vindas
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -37,7 +37,6 @@ def extrair_polos(mensagem):
         polos.append("n")
     return list(dict.fromkeys(polos)) or ["f"]
 
-# 🔹 Nova função para detectar saudações
 def eh_saudacao(mensagem):
     saudacoes = [
         "oi", "olá", "ola", "e aí", "fala", "tudo bem", "tudo bom",
@@ -51,7 +50,14 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
         mensagem_usuario = mensagem_usuario.lower()
         print(f"[DEBUG] Mensagem recebida: {mensagem_usuario}")
 
-        # 🔹 Responde a mensagens de saudação com o menu
+        # 🔥 Proteção contra loop
+        if "total geral" in mensagem_usuario or "comandos disponíveis" in mensagem_usuario:
+            print("[DEBUG] Ignorou mensagem do próprio bot para evitar loop.")
+            return {
+                "mensagem": "Mensagem automática ignorada.",
+                "numero": numero
+            }
+
         if eh_saudacao(mensagem_usuario):
             return {
                 "mensagem": mensagem_boas_vindas(),

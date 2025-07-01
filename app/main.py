@@ -1,4 +1,3 @@
-
 import os
 import requests
 from fastapi import FastAPI, Request
@@ -28,14 +27,17 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
         response_json = response.json()
         media_id = response_json.get("id")
 
+    # 🔥 Adiciona caractere invisível para evitar loop no webhook
+    mensagem_segura = f"{mensagem}\u200B"
+
     # Envio da mensagem
     mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
     payload = {
         "messaging_product": "whatsapp",
         "to": numero,
         "type": "text" if not media_id else "image",
-        "text": {"body": mensagem} if not media_id else None,
-        "image": {"id": media_id, "caption": mensagem} if media_id else None
+        "text": {"body": mensagem_segura} if not media_id else None,
+        "image": {"id": media_id, "caption": mensagem_segura} if media_id else None
     }
 
     return requests.post(mensagem_url, headers=headers, json=payload)
