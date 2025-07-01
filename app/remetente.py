@@ -50,14 +50,12 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
         mensagem_usuario = mensagem_usuario.lower()
         print(f"[DEBUG] Mensagem recebida: {mensagem_usuario}")
 
-        # 🔥 Proteção contra loop mais ampla
         if any(x in mensagem_usuario for x in ["resumo das reclamações", "total geral", "nenhuma reclamação", "comandos disponíveis"]):
             print("[DEBUG] Ignorou mensagem automática do próprio bot.")
             return {
                 "mensagem": "Mensagem automática ignorada.",
                 "numero": numero
             }
-
 
         if eh_saudacao(mensagem_usuario):
             return {
@@ -92,20 +90,19 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
         df_intervalo = transformar_dados_para_intervalo(df, dias)
         respostas = []
 
+        # 🔥 Novo: consolida todos os CEOs em dias > 5 com multiplos CEOs
         if dias > 5 and len(polos) > 1:
-            print("[DEBUG] Entrou no caso múltiplos CEOs + dias > 5")
-            for polo in polos:
-                df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polo=polo)
-                print(f"[DEBUG] Dados encontrados para {polo}: {len(df_filtrado)} linhas")
-                imagens = gerar_grafico_por_polo(df_filtrado, polos=[polo], dias_intervalo=dias)
-                resumo = gerar_resumo_textual(df_filtrado, polo=polo, dias_total=dias)
+            print("[DEBUG] Entrou no caso múltiplos CEOs + dias > 5 consolidado")
+            df_filtrado = filtrar_por_setor_ou_polo(df_intervalo, polos=polos)
+            imagens = gerar_grafico_por_polo(df_filtrado, polos=polos, dias_intervalo=dias)
+            resumo = gerar_resumo_textual(df_filtrado, polos=polos, dias_total=dias)
 
-                if imagens:
-                    if isinstance(imagens, list):
-                        for imagem in imagens:
-                            respostas.append({"imagem_bytes": imagem, "mensagem": resumo, "numero": numero})
-                    else:
-                        respostas.append({"imagem_bytes": imagens, "mensagem": resumo, "numero": numero})
+            if imagens:
+                if isinstance(imagens, list):
+                    for imagem in imagens:
+                        respostas.append({"imagem_bytes": imagem, "mensagem": resumo, "numero": numero})
+                else:
+                    respostas.append({"imagem_bytes": imagens, "mensagem": resumo, "numero": numero})
             print(f"[DEBUG] Total de respostas geradas: {len(respostas)}")
             return respostas if len(respostas) > 1 else respostas[0]
 
