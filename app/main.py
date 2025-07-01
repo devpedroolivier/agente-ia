@@ -8,30 +8,17 @@ TOKEN = os.getenv("META_TOKEN")
 ID_TELEFONE = os.getenv("PHONE_NUMBER_ID")
 
 def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
-    headers = {
-        "Authorization": f"Bearer {TOKEN}"
-    }
-
-    # Upload da imagem para o servidor da Meta, se existir
+    headers = {"Authorization": f"Bearer {TOKEN}"}
     media_id = None
+
     if imagem_bytes:
         upload_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/media"
-        files = {
-            "file": ("grafico.png", imagem_bytes, "image/png")
-        }
-        data = {
-            "messaging_product": "whatsapp",
-            "type": "image"
-        }
+        files = {"file": ("grafico.png", imagem_bytes, "image/png")}
+        data = {"messaging_product": "whatsapp", "type": "image"}
         response = requests.post(upload_url, headers=headers, data=data, files=files)
-        response_json = response.json()
-        media_id = response_json.get("id")
+        media_id = response.json().get("id")
 
-    # 🔥 Adiciona caractere invisível para evitar loop no webhook
     mensagem_segura = f"{mensagem}\u200B"
-
-    # Envio da mensagem
-    mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
     payload = {
         "messaging_product": "whatsapp",
         "to": numero,
@@ -40,6 +27,7 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
         "image": {"id": media_id, "caption": mensagem_segura} if media_id else None
     }
 
+    mensagem_url = f"https://graph.facebook.com/v19.0/{ID_TELEFONE}/messages"
     return requests.post(mensagem_url, headers=headers, json=payload)
 
 @app.post("/webhook")
@@ -52,7 +40,18 @@ async def receber_webhook(request: Request):
 
         for msg in mensagens:
             numero = msg["from"]
-            texto = msg["text"]["body"]
+            texto = ""
+
+            # 📌 Captura texto de message text ou de caption da imagem
+            if "text" in msg:
+                texto = msg["text"]["body"].lower()
+            elif "image" in msg and "caption" in msg["image"]:
+                texto = msg["image"]["caption"].lower()
+
+            # 🔥 Ignora mensagens geradas pelo próprio bot
+            if any(x in texto for x in ["total geral", "resumo das reclamações", "nenhuma reclamação", "comandos disponíveis"]):
+                print("[DEBUG] Ignorou mensagem automática para evitar loop.")
+                continue
 
             respostas = enviar_resposta_padrao(numero, texto)
             if not isinstance(respostas, list):
@@ -73,7 +72,6 @@ async def verificar_webhook(request: Request):
     mode = params.get("hub.mode")
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
-
     if mode == "subscribe" and token == "sabesp123":
         return int(challenge)
     return {"status": "forbidden"}, 403
