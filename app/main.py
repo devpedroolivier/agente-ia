@@ -1,3 +1,4 @@
+
 import os
 import requests
 from fastapi import FastAPI, Request
@@ -6,6 +7,9 @@ from app.remetente import enviar_resposta_padrao
 app = FastAPI()
 TOKEN = os.getenv("META_TOKEN")
 ID_TELEFONE = os.getenv("PHONE_NUMBER_ID")
+
+# 🔒 Cache para evitar loops com comandos repetidos
+ULTIMOS_COMANDOS = {}
 
 def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
     headers = {"Authorization": f"Bearer {TOKEN}"}
@@ -18,7 +22,7 @@ def enviar_mensagem_whatsapp(numero, mensagem, imagem_bytes=None):
         response = requests.post(upload_url, headers=headers, data=data, files=files)
         media_id = response.json().get("id")
 
-    mensagem_segura = f"{mensagem}\u200B"
+    mensagem_segura = f"{mensagem}​"
     payload = {
         "messaging_product": "whatsapp",
         "to": numero,
@@ -48,10 +52,16 @@ async def receber_webhook(request: Request):
             elif "image" in msg and "caption" in msg["image"]:
                 texto = msg["image"]["caption"].lower()
 
-            # 🔥 Ignora mensagens geradas pelo próprio bot
+            # 🔥 Ignora mensagens automáticas do bot
             if any(x in texto for x in ["total geral", "resumo das reclamações", "nenhuma reclamação", "comandos disponíveis"]):
-                print("[DEBUG] Ignorou mensagem automática para evitar loop.")
+                print("[DEBUG] Ignorou mensagem automática.")
                 continue
+
+            # 🔒 Proteção contra loops: ignora comandos repetidos do mesmo número
+            if ULTIMOS_COMANDOS.get(numero) == texto:
+                print(f"[DEBUG] Ignorou comando repetido para {numero}")
+                continue
+            ULTIMOS_COMANDOS[numero] = texto
 
             respostas = enviar_resposta_padrao(numero, texto)
             if not isinstance(respostas, list):
