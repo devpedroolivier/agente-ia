@@ -1,0 +1,12 @@
+.env
+__pycache__/
+graficos/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.idea/
+.vscode/
+.venv/
+app/sincronizar_dados.py
