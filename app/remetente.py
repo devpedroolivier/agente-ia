@@ -50,13 +50,14 @@ def enviar_resposta_padrao(numero, mensagem_usuario):
         mensagem_usuario = mensagem_usuario.lower()
         print(f"[DEBUG] Mensagem recebida: {mensagem_usuario}")
 
-        # 🔥 Proteção contra loop
-        if "total geral" in mensagem_usuario or "comandos disponíveis" in mensagem_usuario:
-            print("[DEBUG] Ignorou mensagem do próprio bot para evitar loop.")
+        # 🔥 Proteção contra loop mais ampla
+        if any(x in mensagem_usuario for x in ["resumo das reclamações", "total geral", "nenhuma reclamação", "comandos disponíveis"]):
+            print("[DEBUG] Ignorou mensagem automática do próprio bot.")
             return {
                 "mensagem": "Mensagem automática ignorada.",
                 "numero": numero
             }
+
 
         if eh_saudacao(mensagem_usuario):
             return {
